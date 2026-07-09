@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AID-Dup</title>
+<link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/static/favicon-192.png">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<style>
+  :root {
+    --ink: #1a237e; --ok: #2e7d32; --warn: #ed6c02; --err: #d32f2f; --new: #7b1fa2;
+    --border: #e0e0e0; --muted: #757575; --bg: #f7f8fc;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: var(--bg); color: #212121; font-size: 14px; }
+  header { background: var(--ink); color: #fff; padding: 10px 22px; display: flex; align-items: center; gap: 14px; }
+  header h1 { font-size: 17px; margin: 0; font-weight: 800; letter-spacing: .3px; }
+  header .sub { opacity: .75; font-size: 12px; }
+  header .spacer { flex: 1; }
+  main { max-width: 1280px; margin: 18px auto; padding: 0 18px 60px; }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+  .card h2 { font-size: 13px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+  button { font: inherit; border: 1px solid var(--border); background: #fff; border-radius: 7px; padding: 5px 11px; cursor: pointer; font-weight: 600; }
+  button:hover:not(:disabled) { border-color: var(--ink); color: var(--ink); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+  button.primary:hover:not(:disabled) { background: #283593; color: #fff; }
+  button.small { padding: 2px 8px; font-size: 12px; border-radius: 6px; }
+  button.danger:hover:not(:disabled) { border-color: var(--err); color: var(--err); }
+  input[type=text] { font: inherit; border: 1px solid var(--border); border-radius: 7px; padding: 5px 9px; }
+  table { border-collapse: collapse; width: 100%; }
+  th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); padding: 6px 8px; border-bottom: 2px solid var(--border); white-space: nowrap; }
+  td { padding: 7px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+  tr:hover td { background: #fafbff; }
+  .chip { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 999px; padding: 1px 9px; font-size: 11.5px; font-weight: 700; margin: 1px 2px 1px 0; background: #fff; white-space: nowrap; }
+  .chip.ok { color: var(--ok); border-color: #a5d6a7; background: #f1f8f1; }
+  .chip.warn { color: var(--warn); border-color: #ffcc80; background: #fff8f0; }
+  .chip.err { color: var(--err); border-color: #ef9a9a; background: #fdf3f3; }
+  .chip.new { color: var(--new); border-color: #ce93d8; background: #faf4fb; }
+  .chip.info { color: #1565c0; border-color: #90caf9; background: #e3f2fd; }
+  .chip.muted { color: var(--muted); }
+  .chip.clickable { cursor: pointer; }
+  .chip.clickable:hover { border-color: var(--ink); color: var(--ink); }
+  .chip.active { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .chip.toggle-active { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .ver-info-icon { transition: opacity 0.15s, transform 0.15s; }
+  .ver-info-icon:hover { opacity: 1 !important; transform: scale(1.2); }
+  .rowmsg { font-size: 12px; font-weight: 600; margin-top: 3px; max-width: 340px; line-height: 1.3; }
+  .rowmsg.ok { color: var(--ok); } .rowmsg.err { color: var(--err); }
+  .rowmsg.warn { color: var(--warn); } .rowmsg.info { color: #0277bd; }
+  .actions button { margin-right: 3px; }
+  .progress { height: 5px; border-radius: 3px; background: #e8eaf6; overflow: hidden; margin-top: 4px; width: 150px; }
+  .progress > div { height: 100%; background: var(--ink); transition: width .4s; }
+  .f1 { font-weight: 800; font-variant-numeric: tabular-nums; }
+  th.f1-col { max-width: 120px; white-space: normal; vertical-align: bottom; }
+  .f1-col-label { font-size: 11.5px; }
+  .f1-col-sub { font-size: 9.5px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--muted); white-space: normal; word-break: break-word; line-height: 1.25; margin-top: 2px; }
+  .metric-strip { display: flex; gap: 26px; flex-wrap: wrap; margin-bottom: 12px; }
+  .metric-strip .m b { display: block; font-size: 21px; line-height: 1.1; }
+  .metric-strip .m span { font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 700; }
+  .group { border: 1px solid var(--border); border-left-width: 4px; border-radius: 8px; margin-bottom: 8px; background: #fff; }
+  .group > summary { cursor: pointer; padding: 8px 12px; font-weight: 700; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; list-style: none; }
+  .group > summary::-webkit-details-marker { display: none; }
+  .group .cases { padding: 4px 14px 10px; border-top: 1px solid #f0f0f0; }
+  .caserow { padding: 6px 0; border-bottom: 1px dashed #eee; font-size: 13px; }
+  .caserow:last-child { border-bottom: none; }
+  .audit { margin: 5px 0 2px 18px; padding: 7px 10px; border-radius: 7px; font-size: 12.5px; line-height: 1.45; background: #f8f9fd; border: 1px solid #e8eaf6; }
+  .audit .clue { margin-top: 4px; padding: 5px 8px; border: 1px dashed #9fa8da; border-radius: 6px; background: #f2f4fb; font-weight: 600; color: var(--ink); }
+  /* Per-discrepant-case audit card: the AI's verdict + reasoning is the headline. */
+  .audit-card { border: 1px solid var(--border); border-left-width: 4px; border-radius: 8px; padding: 10px 13px; margin: 8px 0; background: #fff; }
+  .audit-card-head { font-size: 13px; margin-bottom: 6px; }
+  .audit-card .verdict { font-weight: 800; font-size: 13.5px; margin-bottom: 5px; }
+  .audit-card .verdict.ok { color: var(--ok); } .audit-card .verdict.err { color: var(--err); } .audit-card .verdict.warn { color: var(--warn); }
+  .audit-card .reasoning { font-size: 13px; line-height: 1.55; margin-bottom: 5px; }
+  .audit-card .cause { font-size: 12px; color: var(--muted); }
+  .audit-card .clue { margin-top: 6px; padding: 6px 9px; border: 1px dashed #9fa8da; border-radius: 6px; background: #f2f4fb; font-weight: 600; color: var(--ink); font-size: 12.5px; }
+  /* Comparison modal: one scroll container so the x-scrollbar is pinned at
+     the bottom of the VIEW, with sticky header row + field column. */
+  .cmp-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 4px 2px 10px; }
+  .cmp-wrap { max-height: 72vh; overflow: auto; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+  .cmp-wrap::-webkit-scrollbar { height: 12px; width: 12px; }
+  .cmp-wrap::-webkit-scrollbar-track { background: #f0f1f7; border-radius: 6px; }
+  .cmp-wrap::-webkit-scrollbar-thumb { background: #b7bee6; border-radius: 6px; border: 2px solid #f0f1f7; }
+  .cmp-wrap::-webkit-scrollbar-thumb:hover { background: #8f99d8; }
+  .cmp-table { border-collapse: separate; border-spacing: 0; font-size: 12.5px; width: 100%; }
+  .cmp-table thead th { position: sticky; top: 0; z-index: 3; }
+  .cmp-case-th { padding: 9px 10px; border-bottom: 2px solid var(--border); border-right: 1px solid #e8e8e8; min-width: 230px; vertical-align: top; }
+  .cmp-rowlabel { position: sticky; left: 0; z-index: 2; background: #f5f6fa; font-weight: 800; text-align: left; padding: 9px 12px; border-bottom: 1px solid #e8e8e8; border-right: 2px solid var(--border); white-space: nowrap; font-size: 11.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); vertical-align: top; }
+  .cmp-corner { z-index: 4 !important; border-bottom: 2px solid var(--border); }
+  .cmp-td { padding: 9px 11px; border-bottom: 1px solid #efefef; border-right: 1px solid #e8e8e8; vertical-align: top; }
+  .cmp-hide { border: none; background: transparent; color: #9e9e9e; font-size: 13px; font-weight: 800; padding: 0 3px; cursor: pointer; line-height: 1; border-radius: 4px; }
+  .cmp-hide:hover { color: var(--err); background: rgba(211,47,47,.08); }
+  .modal-back { position: fixed; inset: 0; background: rgba(20,20,40,.45); display: none; align-items: flex-start; justify-content: center; padding: 50px 16px; z-index: 20; overflow: auto; }
+  .modal-back.open { display: flex; }
+  .modal { background: #fff; border-radius: 12px; padding: 20px 22px; width: 100%; max-width: 640px; }
+  .modal h3 { margin: 0 0 12px; }
+  .modal label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin: 10px 0 3px; }
+  .modal input, .modal select, .modal textarea { width: 100%; font: inherit; border: 1px solid var(--border); border-radius: 7px; padding: 6px 9px; }
+  .modal textarea { font-family: Consolas, monospace; font-size: 12px; min-height: 260px; }
+  .modal .foot { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .modal .msg { font-size: 12.5px; font-weight: 600; margin-top: 8px; }
+  pre.strategy { white-space: pre-wrap; font-family: inherit; font-size: 13px; line-height: 1.55; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px; max-height: 560px; overflow: auto; }
+  .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .empty { text-align: center; color: var(--muted); padding: 26px 0; }
+  a { color: var(--ink); }
+  
+  /* Redesigned version modal styles */
+  .form-tab-btn {
+    padding: 10px 14px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .form-tab-btn:hover {
+    background: #f1f3f5;
+    color: var(--ink);
+  }
+  .form-tab-btn.active {
+    background: #fff;
+    color: var(--ok);
+    border-left-color: var(--ok);
+  }
+  
+  .checkbox-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    background: #fff;
+    font-size: 12px;
+    transition: border-color 0.15s, background-color 0.15s;
+    user-select: none;
+  }
+  .checkbox-card:hover {
+    border-color: var(--ink);
+    background: #fafbff;
+  }
+  .checkbox-card input[type="checkbox"] {
+    margin: 0;
+    width: auto;
+  }
+  .checkbox-card input[type="checkbox"]:checked + span {
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .model-option-card {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 8px 0;
+    cursor: pointer;
+    background: #fff;
+    transition: border-color 0.15s, background-color 0.15s;
+    user-select: none;
+  }
+  .model-option-card:hover {
+    border-color: var(--muted);
+    background: #fafafa;
+  }
+  .model-option-card.selected {
+    border-color: var(--ok);
+    background: rgba(46, 204, 113, 0.04);
+  }
+  .model-option-card input[type="radio"] {
+    margin: 4px 0 0 0 !important;
+    width: 16px !important;
+    height: 16px !important;
+    flex-shrink: 0;
+  }
+
+  .custom-model-details {
+    border-top: 1px solid var(--border);
+    margin-top: 14px;
+    padding-top: 14px;
+  }
+  .custom-model-details summary {
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 0.4px;
+    outline: none;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .custom-model-details summary::-webkit-details-marker {
+    display: none;
+  }
+  .custom-model-details summary::before {
+    content: '▶';
+    font-size: 8px;
+    transition: transform 0.15s ease;
+    display: inline-block;
+  }
+  .custom-model-details[open] summary::before {
+    transform: rotate(90deg);
+  }
+  .weights-grid-container input[type="number"] {
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-sizing: border-box;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+  .form-group label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin: 0 !important;
+  }
+  .form-group input, .form-group select {
+    padding: 6px 10px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-sizing: border-box;
+    width: 100% !important;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--ink);
+  }
+
+  /* Approach panel styling */
+  .approach-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 24px;
+    margin-top: 10px;
+  }
+  @media (max-width: 900px) {
+    .approach-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+  }
+  .approach-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--ink);
+    border-bottom: 2px solid #e8eaf6;
+    padding-bottom: 6px;
+    margin: 0 0 16px 0;
+  }
+  .approach-timeline {
+    position: relative;
+    padding-left: 20px;
+  }
+  .approach-timeline::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: #e8eaf6;
+  }
+  .approach-step {
+    position: relative;
+    margin-bottom: 16px;
+  }
+  .approach-step:last-child {
+    margin-bottom: 0;
+  }
+  .approach-step::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--ink);
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #c5cae9;
+    transition: all 0.2s ease;
+  }
+  .approach-step:hover::before {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 3px #9fa8da;
+  }
+  .approach-step-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 3px 0;
+  }
+  .approach-step-desc {
+    font-size: 12px;
+    color: #424242;
+    line-height: 1.45;
+    margin: 0;
+  }
+  .param-badge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .param-badge-card {
+    background: #f8f9fd;
+    border: 1px solid #e8eaf6;
+    border-radius: 8px;
+    padding: 10px 8px;
+    text-align: center;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .param-badge-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(26, 35, 126, 0.06);
+    border-color: #c5cae9;
+  }
+  .param-badge-label {
+    font-size: 9px;
+    color: var(--muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .param-badge-val {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  .weights-details {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .weights-details summary {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 12px;
+    cursor: pointer;
+    background: #f5f6fa;
+    color: var(--ink);
+    user-select: none;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .weights-details summary::-webkit-details-marker {
+    display: none;
+  }
+  .weights-details summary::after {
+    content: '▼';
+    font-size: 9px;
+    transition: transform 0.2s ease;
+  }
+  .weights-details[open] summary::after {
+    transform: rotate(180deg);
+  }
+  .weights-details[open] summary {
+    border-bottom: 1px solid var(--border);
+  }
+  .weights-table {
+    width: 100%;
+    font-size: 12px;
+    border-collapse: collapse;
+  }
+  .weights-table th {
+    background: #fafafa;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .weights-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+  }
+  .weights-table tr:last-child td {
+    border-bottom: none;
+  }
+</style>
+</head>
+<body>
+<header>
+  <img src="/static/favicon-32.png" alt="AID-Dup" width="26" height="26" style="background:#fff;border-radius:7px;padding:2px;flex-shrink:0">
+  <h1>AID-Dup</h1>
+  <span class="sub">AI Detector for Duplication — standalone deduplication research bench, separate database, no ties to the main app</span>
+  <span class="spacer"></span>
+  <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);padding:4px 9px;border-radius:7px;margin-right:2px;user-select:none;transition:background 0.2s">
+    <input type="checkbox" id="mockModeToggle" onchange="toggleMockMode()" style="margin:0;width:auto;cursor:pointer">
+    <span>Mock AI Mode</span>
+  </label>
+  <button class="small" onclick="openSettings()">⚙ AI Settings</button>
+  <button class="small" onclick="downloadRuns()">⬇ Runs CSV</button>
+  <button class="small" onclick="refreshAll(true)">↻ Refresh</button>
+</header>
+<main>
+
+  <!-- Select approach panel -->
+  <div class="card" id="selectApproachPanel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <h2 style="margin:0">Select Deduplication Approach</h2>
+    </div>
+    <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
+      <!-- The v1 "(Original) Paper Approach" and the v1-based "New AI Approach
+           (Tiered Funnel)" are retired in favor of Paper Approach v2 and hidden
+           (display:none). Their radios are kept in the DOM, unchecked, so they
+           can be restored by removing the inline style; the backend endpoints
+           are also disabled (see V1_APPROACHES_ENABLED in server.py). -->
+      <label style="cursor: pointer; display: none; align-items: center; gap: 6px; margin: 0;">
+        <input type="radio" name="dedup_approach" value="paper" onchange="updateApproachSelection()">
+        <span>(Original) Paper Approach (Deterministic, no AI)</span>
+      </label>
+      <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; margin: 0;">
+        <input type="radio" name="dedup_approach" value="paperv2" checked onchange="updateApproachSelection()">
+        <span>Paper Approach v2 (Revised, no AI)</span>
+      </label>
+      <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; margin: 0;">
+        <input type="radio" name="dedup_approach" value="paperv2ai" onchange="updateApproachSelection()">
+        <span>Enhanced Approach (AI + Narrative-Gated + Doc-Frequency Filter)</span>
+      </label>
+      <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; margin: 0;" title="Same as Enhanced Approach, plus a hard rule against merging two reports that cite the same journal article -- supportive/discussion evidence, not a main-result approach. See documents/SE7_negative_control_analysis.md">
+        <input type="radio" name="dedup_approach" value="paperv2ailit" onchange="updateApproachSelection()">
+        <span>Enhanced Approach + Literature-aware</span>
+      </label>
+      <div style="display: none; align-items: center; gap: 8px;">
+        <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; margin: 0;">
+          <input type="radio" name="dedup_approach" value="ai" onchange="updateApproachSelection()">
+          <span>New AI Approach (Tiered Funnel)</span>
+        </label>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; margin: 0;">
+          <input type="radio" name="dedup_approach" value="legacy" onchange="updateApproachSelection()">
+          <span>Bucketing + AI Call</span>
+        </label>
+        <button class="small" onclick="openVersionModal()" id="aiConfigBtn" style="padding: 2px 8px; font-size: 11.5px; border-radius: 6px; font-weight: 600;">🛠 AI Config</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Approach Card -->
+  <div class="card" id="aiApproachCard" style="display: none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:12px">
+      <h2 style="margin:0" id="ai-approach-header-title">Active Deduplication Approach <span style="text-transform:none;letter-spacing:0;font-weight:400">— AI-Flavored Pipeline (Tiered Funnel)</span></h2>
+      <span class="chip ok" style="font-size:11px;padding:3px 10px;text-transform:uppercase;letter-spacing:0.5px">Active Algorithm</span>
+    </div>
+    
+    <div class="approach-grid">
+      <div>
+        <div class="approach-section-title">Pipeline Workflow</div>
+        <div class="approach-timeline" id="ai-approach-timeline">
+          <div class="approach-step">
+            <div class="approach-step-title">1. Pair Screening</div>
+            <p class="approach-step-desc">Indexes reports into demographic, drug product, and adverse event datasets. Candidate duplicate pairs must share at least one Product Active Ingredient (PAI) <strong>and</strong> one Adverse Event (AE), with report dates within <span id="ai-param-screening-window">365</span> days.</p>
+          </div>
+          
+          <div class="approach-step">
+            <div class="approach-step-title">2. Pairwise Probabilistic Comparison (Tier 1)</div>
+            <p class="approach-step-desc">Computes a record-linkage weight score over structured fields (age, sex, country, date, drugs, events) and narrative features. If score is &ge; Duplicate Threshold, they are classed as duplicates; if &ge; Rescue Threshold, they go to Tier 2.</p>
+          </div>
+          
+          <div class="approach-step">
+            <div class="approach-step-title">3. Narrative LLM Adjudicator (Tier 2)</div>
+            <p class="approach-step-desc">Ambiguous pairs falling in the rescue window are passed to the AI to compare case narratives in parallel. The AI uses the prompt configuration to decide if the cases describe the same event.</p>
+          </div>
+          
+          <div class="approach-step">
+            <div class="approach-step-title">4. Modularity-Based Grouping &amp; Selection</div>
+            <p class="approach-step-desc">Forms groups using Clauset–Newman–Moore community detection on duplicate edges and selects the optimal reference case.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <div class="approach-section-title">Algorithm Parameters (AI Config <span id="ai-active-version-label">v-</span>)</div>
+        <div class="param-badge-grid">
+          <div class="param-badge-card" title="Minimum score to classify a pair as duplicates without narrative LLM confirmation">
+            <div class="param-badge-label" id="ai-param-dup-threshold-label">Duplicate Threshold</div>
+            <div class="param-badge-val" id="ai-param-dup-threshold">-</div>
+          </div>
+          <div class="param-badge-card" title="Minimum score required to trigger narrative LLM comparison (Rescue Threshold)">
+            <div class="param-badge-label" id="ai-param-rescue-threshold-label">Rescue Threshold</div>
+            <div class="param-badge-val" id="ai-param-rescue-threshold">-</div>
+          </div>
+          <div class="param-badge-card" title="Minimum score required to run Tier 2 (second component threshold)">
+            <div class="param-badge-label" id="ai-param-second-threshold-label">1st Comp Threshold</div>
+            <div class="param-badge-val" id="ai-param-second-threshold">-</div>
+          </div>
+        </div>
+        
+        <details class="weights-details" style="margin-top: 14px;">
+          <summary>Show Field Weights (Match/Mismatch)</summary>
+          <table class="weights-table">
+            <thead>
+              <tr>
+                <th style="text-align: left">Field / Feature</th>
+                <th style="width: 70px; text-align: right">Match</th>
+                <th style="width: 70px; text-align: right">Mismatch</th>
+              </tr>
+            </thead>
+            <tbody id="ai-approach-weights-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </details>
+        
+        <details class="weights-details" style="margin-top: 10px;">
+          <summary>Show AI Prompt Details</summary>
+          <div style="padding: 10px; font-size: 11px; background: #fafafa; border-top: 1px solid var(--border);">
+            <div style="font-weight: 700; color: var(--ink); margin-bottom: 4px;">System Instructions:</div>
+            <pre id="ai-param-sys-prompt" style="margin: 0 0 10px 0; white-space: pre-wrap; font-family: monospace; font-size: 10px; max-height: 120px; overflow-y: auto; background: #fff; padding: 6px; border: 1px solid var(--border); border-radius: 4px;"></pre>
+            
+            <div style="font-weight: 700; color: var(--ink); margin-bottom: 4px;">User Prompt Template:</div>
+            <pre id="ai-param-user-prompt" style="margin: 0; white-space: pre-wrap; font-family: monospace; font-size: 10px; max-height: 120px; overflow-y: auto; background: #fff; padding: 6px; border: 1px solid var(--border); border-radius: 4px;"></pre>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active deduplication approach panel -->
+  <div class="card" id="approachCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:12px">
+      <h2 style="margin:0">Active Deduplication Approach <span id="paper-approach-subtitle" style="text-transform:none;letter-spacing:0;font-weight:400">— InfoViP paper pipeline (deterministic, no AI)</span></h2>
+      <span class="chip ok" style="font-size:11px;padding:3px 10px;text-transform:uppercase;letter-spacing:0.5px">Active Algorithm</span>
+    </div>
+    
+    <div class="approach-grid">
+      <div>
+        <div class="approach-section-title">Pipeline Workflow</div>
+        <div class="approach-timeline">
+          <div class="approach-step">
+            <div class="approach-step-title">1. Pair Screening</div>
+            <p class="approach-step-desc">Indexes reports into demographic, drug product, and adverse event datasets. Candidate duplicate pairs must share at least one Product Active Ingredient (PAI) <strong>and</strong> one Adverse Event (AE), with report dates within <span id="param-screening-window">365</span> days.</p>
+          </div>
+          
+          <div class="approach-step">
+            <div class="approach-step-title">2. Pairwise Probabilistic Comparison</div>
+            <p class="approach-step-desc">Computes a record-linkage weight score over structured fields (age, sex, country, date, drugs, events) and regex-extracted narrative features (diagnosis, medical history, family history, symptoms, drug mentions, dates).</p>
+          </div>
+          
+          <div class="approach-step">
+            <div class="approach-step-title">3. Modularity-Based Grouping</div>
+            <p class="approach-step-desc">Forms a network graph from duplicate pairs. Connected components are recursively split using Clauset–Newman–Moore community detection unless edge density meets specified group-size density exemptions.</p>
+          </div>
+          
+          <div class="approach-step">
+            <div class="approach-step-title">4. Reference Case Selection</div>
+            <p class="approach-step-desc">For each group, selects the report with the largest sum of connecting edge weights. Ties are broken by suspect products + AE count, narrative completeness, and most recent receive date.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <div class="approach-section-title">Algorithm Parameters</div>
+        <div class="param-badge-grid">
+          <div class="param-badge-card" title="Minimum score to classify a pair as duplicates without second component confirmation">
+            <div class="param-badge-label">Dup Threshold</div>
+            <div class="param-badge-val" id="param-dup-threshold">-</div>
+          </div>
+          <div class="param-badge-card" title="Minimum score to classify a pair as duplicates if second component confirms it">
+            <div class="param-badge-label">Rescue Thr</div>
+            <div class="param-badge-val" id="param-rescue-threshold">-</div>
+          </div>
+          <div class="param-badge-card" title="Minimum score required to run second component regex checks">
+            <div class="param-badge-label">2nd Comp Thr</div>
+            <div class="param-badge-val" id="param-second-threshold">-</div>
+          </div>
+          <div class="param-badge-card" title="Minimum regex match score to confirm duplicate status in 2nd component">
+            <div class="param-badge-label">2nd Confirm Min</div>
+            <div class="param-badge-val" id="param-second-confirm">-</div>
+          </div>
+          <div class="param-badge-card" title="Whether 2nd component regex confirmation is strictly required for cases with narratives">
+            <div class="param-badge-label">Req 2nd Confirm</div>
+            <div class="param-badge-val" style="font-size: 15px; line-height: 25px;" id="param-req-second-confirm">-</div>
+          </div>
+        </div>
+        
+        <details class="weights-details">
+          <summary>Show Field Weights (Match/Mismatch)</summary>
+          <table class="weights-table">
+            <thead>
+              <tr>
+                <th style="text-align:left">Information Field</th>
+                <th style="text-align:right">Match Weight</th>
+                <th style="text-align:right">Mismatch Weight</th>
+              </tr>
+            </thead>
+            <tbody id="approach-weights-tbody">
+              <tr>
+                <td colspan="3" style="text-align:center;color:var(--muted)">Loading weights...</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+        <p id="paper-approach-gate-info" style="display:none;margin-top:10px;font-size:12.5px;color:var(--muted)"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Benchmark series — readiness &amp; performance (pair-level F1; the "paper" column is the deterministic Kreimeyer 2025 pipeline, no AI)</h2>
+    <div class="toolbar">
+      <input type="text" id="newSeriesName" placeholder="New series name" style="width:240px"
+             onkeydown="if(event.key==='Enter')createSeries()">
+      <button class="primary" onclick="createSeries()">+ Add series</button>
+      <span style="flex:1"></span>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer" title="Mock runs and runs flagged as known-bugged/superseded are hidden from the matrix and run history by default">
+        <input type="checkbox" id="showBuggyMockToggle" onchange="toggleBuggyMockVisibility()">
+        Show mock &amp; bugged runs
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer" title="Runs from a retired approach/version (paper v1, an abandoned bucketing test) are hidden from the matrix and run history by default">
+        <input type="checkbox" id="showArchivedToggle" onchange="toggleArchivedVisibility()">
+        Show archived runs
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer" title="Upload/replace case file, upload/replace ground truth, and delete-series actions are hidden by default since the benchmark datasets are fixed for this research -- toggle on if you need to change them">
+        <input type="checkbox" id="showDatasetActionsToggle" onchange="toggleDatasetActionsVisibility()">
+        Show dataset management (Cases/GT/Delete)
+      </label>
+      <button onclick="openBootstrapModal()" id="bootstrapBtn" title="Paired bootstrap over the benchmark series: resamples series with replacement to give a 95% CI and p-value on the macro-F1 difference between two conditions, instead of just a single-run point estimate">📊 Bootstrap compare</button>
+    </div>
+    <div id="versionTogglesContainer" style="display:none;margin-bottom:12px;font-size:12px;align-items:center;gap:6px;flex-wrap:wrap;background:rgba(0,0,0,0.02);padding:8px 12px;border-radius:6px;border:1px dashed var(--border)">
+      <span style="font-weight:700;color:var(--muted)">Show F1 columns:</span>
+      <div id="versionToggles" style="display:inline-flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <div id="seriesTable"></div>
+  </div>
+
+  <div class="card" id="detailCard" style="display:none">
+    <h2 id="detailTitle">Series detail</h2>
+    <div id="detailBody"></div>
+  </div>
+
+
+</main>
+
+<!-- Version details modal -->
+<div class="modal-back" id="versionDetailsModal">
+  <div class="modal" style="max-width: 580px;">
+    <h3>Version Details: <span id="detVersionTitle"></span></h3>
+    
+    <div style="display:grid;grid-template-columns:80px 1fr;gap:8px 12px;margin-bottom:12px;font-size:13px;align-items:center">
+      <div style="font-weight:700;color:var(--muted)">Label:</div>
+      <input type="text" id="detVersionLabel" style="font-weight:600;padding:4px 8px;font-size:12.5px;box-sizing:border-box;width:100%;margin:0">
+      
+      <div style="font-weight:700;color:var(--muted);align-self:start;margin-top:4px">Notes:</div>
+      <textarea id="detVersionNotes" style="color:var(--ink);font-family:inherit;font-size:12px;min-height:54px;box-sizing:border-box;width:100%;padding:4px 8px;resize:vertical;margin:0"></textarea>
+    </div>
+    
+    <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Configuration Parameters</label>
+    <textarea id="detVersionConfig" readonly style="font-family:monospace;font-size:11px;height:240px;background:#fafafa;cursor:text;margin-bottom:12px;width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--border);border-radius:6px"></textarea>
+    
+    <div class="foot">
+      <button class="danger" id="detVersionDelete" onclick="deleteVersionFromDetails()" style="float:left">Delete version</button>
+      <button class="primary" onclick="saveVersionMetadata()">Save changes</button>
+      <button class="primary" onclick="useVersionAsTemplate()" style="background:#455a64;border-color:#455a64">Use as template</button>
+      <button class="ok" id="detVersionActivate" onclick="activateVersionFromDetails()">Activate</button>
+      <button onclick="closeModal('versionDetailsModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-back" id="settingsModal">
+  <div class="modal" style="max-width: 580px;">
+    <h3>AI Model Settings</h3>
+    <p style="font-size:12.5px;color:var(--muted);margin:0 0 6px">
+      Pick which of the study models runs the pipeline. Default options are configured in <code>.env</code>.
+    </p>
+    <div id="modelOptions" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:6px;margin-bottom:12px"></div>
+    
+    <details class="custom-model-details">
+      <summary>Add Custom Model Profile</summary>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div class="form-group">
+          <label for="custKey">Model Key (id, unique)</label>
+          <input type="text" id="custKey" placeholder="e.g. local-llama">
+        </div>
+        <div class="form-group">
+          <label for="custLabel">Label (display name)</label>
+          <input type="text" id="custLabel" placeholder="e.g. Local Llama-3 (Ollama)">
+        </div>
+        <div class="form-group">
+          <label for="custProvider">Provider Type</label>
+          <select id="custProvider" style="height:32px;">
+            <option value="openai">OpenAI-Compatible (Ollama, vLLM, etc.)</option>
+            <option value="elsa">Elsa FDA Proxy</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="custModel">Model / Engine ID</label>
+          <input type="text" id="custModel" placeholder="e.g. llama3.1">
+        </div>
+        <div class="form-group" style="grid-column: span 2">
+          <label for="custBaseUrl">Base API URL</label>
+          <input type="text" id="custBaseUrl" placeholder="e.g. http://localhost:11434/v1">
+        </div>
+        <div class="form-group" style="grid-column: span 2">
+          <label for="custApiKey">API Key (if required)</label>
+          <input type="password" id="custApiKey" placeholder="API key / token">
+        </div>
+      </div>
+      <button class="primary" style="margin-top:12px;width:100%;padding:8px;font-weight:600;border-radius:6px;" onclick="addCustomModel()">+ Add Custom Model</button>
+    </details>
+    
+    <div class="msg" id="settingsMsg"></div>
+    <div class="foot">
+      <button onclick="testSettings()">Test connection</button>
+      <button onclick="closeModal('settingsModal')">Close</button>
+      <button class="primary" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- New skill version modal -->
+<div class="modal-back" id="versionModal">
+  <div class="modal" style="max-width: 960px;">
+    <h3 style="margin-bottom:16px">New skill version</h3>
+    
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Version Label</label>
+      <input type="text" id="verLabel" placeholder="e.g. wider age bands + lower ambiguous threshold" style="padding:6px 10px;font-size:12.5px;box-sizing:border-box">
+    </div>
+    
+    <div style="display:flex;gap:18px;align-items:stretch;margin-bottom:16px">
+      <!-- Left side: Form Editor with Tabs -->
+      <div id="versionForm" style="flex:1.3;display:flex;flex-direction:row;border:1px solid var(--border);border-radius:8px;background:#fff;height:490px;overflow:hidden">
+        <!-- Tab Headers (Vertical Sidebar on the left) -->
+        <div style="display:flex;flex-direction:column;background:#f8f9fa;border-right:1px solid var(--border);width:130px;flex-shrink:0">
+          <div class="form-tab-btn active" onclick="switchFormTab('tab-bucketing')" id="btn-tab-bucketing" style="padding:12px 14px;">Screening</div>
+          <div class="form-tab-btn" onclick="switchFormTab('tab-weights')" id="btn-tab-weights" style="padding:12px 14px;">Log-Odds Weights</div>
+          <div class="form-tab-btn" onclick="switchFormTab('tab-thresholds')" id="btn-tab-thresholds" style="padding:12px 14px;">Thresholds &amp; Tol</div>
+          <div class="form-tab-btn" onclick="switchFormTab('tab-prompt')" id="btn-tab-prompt" style="padding:12px 14px;">AI Prompt</div>
+        </div>
+        
+        <!-- Tab Contents Container -->
+        <div style="flex:1;padding:16px;overflow-y:auto">
+          <!-- Tab 1: Screening -->
+          <div id="tab-bucketing" class="form-tab-content" style="flex-direction:column;gap:12px">
+            <h4 style="margin:0 0 8px;font-size:12px;color:var(--ink);text-transform:uppercase;letter-spacing:.4px">Screening window</h4>
+            <p style="font-size:11px;color:var(--muted);margin:0 0 12px">Candidate pairs must have their initial FDA report dates within this window to enter comparison.</p>
+            <div class="form-group">
+              <label for="fbScreeningWindow">Date Window (Days)</label>
+              <input type="number" id="fbScreeningWindow" min="1" oninput="syncFormToJSON()" style="max-width:150px">
+            </div>
+          </div>
+          
+          <!-- Tab 2: Log-Odds Weights -->
+          <div id="tab-weights" class="form-tab-content" style="display:none;flex-direction:column;gap:12px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+              <!-- Left Column: Demographic Weights -->
+              <div>
+                <h4 style="margin:0 0 8px;font-size:12px;color:var(--ink);text-transform:uppercase;letter-spacing:.4px">Demographic Weights</h4>
+                <p style="font-size:11px;color:var(--muted);margin:0 0 12px">Scores added for matches, subtracted for mismatches.</p>
+                <div class="weights-grid-container" style="display:flex;flex-direction:column;gap:8px">
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px">
+                    <span>Field</span>
+                    <span>Match</span>
+                    <span>Mismatch</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px;align-items:center;">
+                    <span style="font-size:11.5px;font-weight:600">Sex</span>
+                    <input type="number" step="0.1" id="fwmSexMatch" oninput="syncFormToJSON()">
+                    <input type="number" step="0.1" id="fwmSexMismatch" oninput="syncFormToJSON()">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px;align-items:center;">
+                    <span style="font-size:11.5px;font-weight:600">Age</span>
+                    <input type="number" step="0.1" id="fwmAgeMatch" oninput="syncFormToJSON()">
+                    <input type="number" step="0.1" id="fwmAgeMismatch" oninput="syncFormToJSON()">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px;align-items:center;">
+                    <span style="font-size:11.5px;font-weight:600">Country</span>
+                    <input type="number" step="0.1" id="fwmCountryMatch" oninput="syncFormToJSON()">
+                    <input type="number" step="0.1" id="fwmCountryMismatch" oninput="syncFormToJSON()">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px;align-items:center;">
+                    <span style="font-size:11.5px;font-weight:600">Date</span>
+                    <input type="number" step="0.1" id="fwmDateMatch" oninput="syncFormToJSON()">
+                    <input type="number" step="0.1" id="fwmDateMismatch" oninput="syncFormToJSON()">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px;align-items:center;">
+                    <span style="font-size:11.5px;font-weight:600">Drugs</span>
+                    <input type="number" step="0.1" id="fwmDrugsMatch" oninput="syncFormToJSON()">
+                    <input type="number" step="0.1" id="fwmDrugsMismatch" oninput="syncFormToJSON()">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px;align-items:center;">
+                    <span style="font-size:11.5px;font-weight:600">Events</span>
+                    <input type="number" step="0.1" id="fwmEventsMatch" oninput="syncFormToJSON()">
+                    <input type="number" step="0.1" id="fwmEventsMismatch" oninput="syncFormToJSON()">
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Right Column: Narrative Weights -->
+              <div>
+                <h4 style="margin:0 0 8px;font-size:12px;color:var(--ink);text-transform:uppercase;letter-spacing:.4px">Narrative (ETHER) Weights</h4>
+                <p style="font-size:11px;color:var(--muted);margin:0 0 12px">Weights for narrative text keywords and parsed features.</p>
+                <div class="weights-grid-container" style="display:flex;flex-direction:column;gap:8px">
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px">
+                    <span>Field</span>
+                    <span>Match</span>
+                    <span>Mismatch</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px;align-items:center;">
+                    <span style="font-size:11.5px;font-weight:600">Diagnosis</span>
+                    <input type="number" step="0.1" id="fwmDiagMatch" oninput="syncFormToJSON()">
+                    <input type="number" step="0.1" id="fwmDiagMismatch" oninput="syncFormToJSON()">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px;align-items:center;">
+                    <span style="font-size:11.5px;font-weight:600">Med History</span>
+                    <input type="number" step="0.1" id="fwmHistMatch" oninput="syncFormToJSON()">
+                    <input type="number" step="0.1" id="fwmHistMismatch" oninput="syncFormToJSON()">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px;align-items:center;">
+                    <span style="font-size:11.5px;font-weight:600">Fam History</span>
+                    <input type="number" step="0.1" id="fwmFamMatch" oninput="syncFormToJSON()">
+                    <input type="number" step="0.1" id="fwmFamMismatch" oninput="syncFormToJSON()">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px;align-items:center;">
+                    <span style="font-size:11.5px;font-weight:600">Symptoms</span>
+                    <input type="number" step="0.1" id="fwmSympMatch" oninput="syncFormToJSON()">
+                    <input type="number" step="0.1" id="fwmSympMismatch" oninput="syncFormToJSON()">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px;align-items:center;">
+                    <span style="font-size:11.5px;font-weight:600">Narr Drugs</span>
+                    <input type="number" step="0.1" id="fwmNarrDrugsMatch" oninput="syncFormToJSON()">
+                    <input type="number" step="0.1" id="fwmNarrDrugsMismatch" oninput="syncFormToJSON()">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px;align-items:center;">
+                    <span style="font-size:11.5px;font-weight:600">Narr Dates</span>
+                    <input type="number" step="0.1" id="fwmNarrDatesMatch" oninput="syncFormToJSON()">
+                    <input type="number" step="0.1" id="fwmNarrDatesMismatch" oninput="syncFormToJSON()">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tab 3: Tolerances & Thresholds -->
+          <div id="tab-thresholds" class="form-tab-content" style="display:none;flex-direction:column;gap:12px">
+            <h4 style="margin:0 0 8px;font-size:12px;color:var(--ink);text-transform:uppercase;letter-spacing:.4px">Decision Thresholds (Log-Odds)</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+              <div class="form-group">
+                <label for="fsSecondThreshold">First-Component Threshold</label>
+                <input type="number" step="0.1" id="fsSecondThreshold" oninput="syncFormToJSON()">
+              </div>
+              <div class="form-group">
+                <label for="fsDuplicateThreshold">Duplicate Threshold</label>
+                <input type="number" step="0.1" id="fsDuplicateThreshold" oninput="syncFormToJSON()">
+              </div>
+              <div class="form-group">
+                <label for="fsRescueThreshold">Rescue Threshold</label>
+                <input type="number" step="0.1" id="fsRescueThreshold" oninput="syncFormToJSON()">
+              </div>
+            </div>
+            
+            <h4 style="margin:14px 0 8px;font-size:12px;color:var(--ink);text-transform:uppercase;letter-spacing:.4px;border-top:1px solid var(--border);padding-top:12px">Tolerances &amp; Confirmation</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+              <div class="form-group">
+                <label for="fsAgeTol">Age Tolerance (Years)</label>
+                <input type="number" id="fsAgeTol" min="1" oninput="syncFormToJSON()">
+              </div>
+              <div class="form-group">
+                <label for="fsDateExactBonus">Date Exact Bonus (Days)</label>
+                <input type="number" id="fsDateExactBonus" min="0" oninput="syncFormToJSON()">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="form-group">
+                <label for="fsDatePartialDays">Date Partial (Days)</label>
+                <input type="number" id="fsDatePartialDays" min="1" oninput="syncFormToJSON()">
+              </div>
+              <div class="form-group">
+                <label for="fsSecondConfirm">Second-Component Confirm</label>
+                <input type="number" step="0.05" id="fsSecondConfirm" oninput="syncFormToJSON()">
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tab 4: AI Prompt -->
+          <div id="tab-prompt" class="form-tab-content" style="display:none;flex-direction:column;height:100%;gap:12px">
+            <h4 style="margin:0 0 8px;font-size:12px;color:var(--ink);text-transform:uppercase;letter-spacing:.4px">AI / Narrative LLM Prompt</h4>
+            
+            <div class="form-group" style="margin-bottom:6px">
+              <label>Trigger LLM Audits for Confidences:</label>
+              <div style="display:flex;gap:8px;margin-top:4px">
+                <label class="checkbox-card" style="padding:6px 10px;flex:1;justify-content:center">
+                  <input type="checkbox" id="flcHigh" value="high" onchange="syncFormToJSON()">
+                  <span>High</span>
+                </label>
+                <label class="checkbox-card" style="padding:6px 10px;flex:1;justify-content:center">
+                  <input type="checkbox" id="flcMed" value="medium" onchange="syncFormToJSON()">
+                  <span>Medium</span>
+                </label>
+                <label class="checkbox-card" style="padding:6px 10px;flex:1;justify-content:center">
+                  <input type="checkbox" id="flcLow" value="low" onchange="syncFormToJSON()">
+                  <span>Low</span>
+                </label>
+              </div>
+            </div>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1;min-height:220px">
+              <div class="form-group" style="display:flex;flex-direction:column;margin:0">
+                <label for="verSysPrompt" style="margin-bottom:4px">System Instructions</label>
+                <textarea id="verSysPrompt" oninput="syncFormToJSON()" placeholder="Enter system instructions..." style="flex:1;min-height:170px;font-family:monospace;font-size:11px;padding:8px;border:1px solid var(--border);border-radius:6px;resize:none;box-sizing:border-box"></textarea>
+              </div>
+              <div class="form-group" style="display:flex;flex-direction:column;margin:0">
+                <label for="verUserPrompt" style="margin-bottom:4px">User Prompt Template</label>
+                <textarea id="verUserPrompt" oninput="syncFormToJSON()" placeholder="Enter user prompt template..." style="flex:1;min-height:170px;font-family:monospace;font-size:11px;padding:8px;border:1px solid var(--border);border-radius:6px;resize:none;box-sizing:border-box"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Right side: Raw JSON Editor -->
+      <div style="flex:1;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;margin-bottom:4px">
+          <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Config JSON (auto-syncs with Form)</label>
+          <span style="flex:1"></span>
+          <button class="small" title="Load a config JSON file (a bare config object or {&quot;config&quot;: {...}}) into the editor — e.g. one produced from the audit report" onclick="$('verImportFile').click()">📂 Import JSON</button>
+        </div>
+        <textarea id="verConfig" spellcheck="false" style="flex:1;margin:0;font-size:11.5px;height:490px;box-sizing:border-box;padding:8px;border:1px solid var(--border);border-radius:8px" oninput="syncJSONToForm()"></textarea>
+      </div>
+    </div>
+    
+    <div class="msg" id="versionMsg"></div>
+    <div class="foot">
+      <button onclick="closeModal('versionModal')">Cancel</button>
+      <button class="primary" onclick="createVersion()">Create &amp; activate</button>
+    </div>
+  </div>
+</div>
+
+<!-- Full-window case comparison modal -->
+<div class="modal-back" id="compareModal">
+  <div class="modal" style="max-width:min(97vw,1600px)">
+    <h3 id="compareTitle">Case comparison</h3>
+    <div id="compareBody"></div>
+    <div class="foot"><button onclick="closeModal('compareModal')">Close</button></div>
+  </div>
+</div>
+
+<!-- Bootstrap comparison modal -->
+<div class="modal-back" id="bootstrapModal">
+  <div class="modal" style="max-width: 640px;">
+    <h3>Bootstrap compare macro-F1</h3>
+    <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px">Paired bootstrap over the benchmark series (resample series with replacement, recompute macro-F1 each time) — gives a 95% CI and p-value on the difference between two conditions, instead of just a single-run point estimate. Only series with a scored, non-hidden run under <b>both</b> conditions are used.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Condition A</label>
+        <select id="bootstrapCondA" style="width:100%;font:inherit;padding:5px 8px;border:1px solid var(--border);border-radius:7px"></select>
+      </div>
+      <div>
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Condition B</label>
+        <select id="bootstrapCondB" style="width:100%;font:inherit;padding:5px 8px;border:1px solid var(--border);border-radius:7px"></select>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <label style="font-size:12px;color:var(--muted)">Resamples:</label>
+      <input type="number" id="bootstrapNBoot" value="10000" min="100" max="200000" step="1000" style="width:100px;font:inherit;padding:4px 8px;border:1px solid var(--border);border-radius:7px">
+      <button class="primary" onclick="runBootstrapCompare()" id="bootstrapRunBtn">Run comparison</button>
+    </div>
+    <div id="bootstrapResult"></div>
+    <div class="foot"><button onclick="closeModal('bootstrapModal')">Close</button></div>
+  </div>
+</div>
+
+<input type="file" id="caseFile" hidden accept=".csv,.xlsx,.xls,.json">
+<input type="file" id="gtFile" hidden accept=".json">
+<input type="file" id="verImportFile" hidden accept=".json">
+
+<script>
+let state = { overview: null, rowMsg: {}, detailSeries: null, polling: null, hiddenVersions: {}, skillConfigs: [], showBuggyMock: false, showArchived: false, showDatasetActions: false };
+
+// Mock runs and runs flagged with `notes` (known-bugged/superseded) are
+// hidden from the run history table, its tooltip, and the benchmark matrix
+// by default -- they're confusing noise unless someone is specifically
+// digging through history. Runs from a retired approach/version (is_archived,
+// e.g. the old paper v1 pipeline or an abandoned bucketing test) are hidden
+// by a SEPARATE toggle -- they aren't bugged, just no longer the thing being
+// compared against. toggleBuggyMockVisibility() / toggleArchivedVisibility()
+// reveal each independently.
+function isHiddenRun(r) {
+  if (!state.showBuggyMock && (r.is_mock || !!r.notes)) return true;
+  if (!state.showArchived && r.is_archived) return true;
+  return false;
+}
+function toggleBuggyMockVisibility() {
+  state.showBuggyMock = !state.showBuggyMock;
+  renderSeries();
+  if (state.detailSeries) loadDetail(state.detailSeries, true);
+}
+function toggleArchivedVisibility() {
+  state.showArchived = !state.showArchived;
+  renderSeries();
+  if (state.detailSeries) loadDetail(state.detailSeries, true);
+}
+// Cases/GT upload and delete-series are hidden by default in the benchmark
+// table -- the 12 datasets are fixed for this research, so these are rarely
+// needed; toggleDatasetActionsVisibility() reveals them when a dataset
+// genuinely needs to change.
+function toggleDatasetActionsVisibility() {
+  state.showDatasetActions = !state.showDatasetActions;
+  renderSeries();
+}
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// When the page is opened outside the Flask server (file://, preview panes,
+// srcdoc iframes) relative fetch URLs have no valid HTTP base — fall back to
+// the server's default address.
+const API_BASE = /^https?:$/.test(location.protocol) ? '' : 'http://127.0.0.1:8123';
+
+async function api(path, opts = {}) {
+  const res = await fetch(API_BASE + path, { headers: opts.body && !(opts.body instanceof FormData) ? {'Content-Type': 'application/json'} : {}, ...opts });
+  const text = await res.text();
+  let data = {};
+  let parseError = null;
+  try { data = text ? JSON.parse(text) : {}; } catch (e) { parseError = e; }
+  if (!res.ok) throw new Error(data.error || `${res.status} ${res.statusText}`);
+  // A 200 with unparseable JSON must not silently degrade to {} — that hides
+  // server-side serialization bugs (e.g. bare NaN in a payload).
+  if (parseError) throw new Error(`Server returned invalid JSON for ${path}: ${parseError.message}`);
+  return data;
+}
+
+function setRowMsg(seriesId, kind, text) { state.rowMsg[seriesId] = { kind, text }; renderSeries(); }
+
+// ------------------------------------------------------------- overview
+
+async function refreshAll(clearMsgs = false) {
+  if (clearMsgs) state.rowMsg = {};
+  try {
+    state.overview = await api('/api/overview');
+    const cfgData = await api('/api/skill-configs');
+    state.skillConfigs = cfgData.configs || [];
+  } catch (e) {
+    $('seriesTable').innerHTML = `<div class="empty">Failed to load: ${esc(e.message)}</div>`;
+    return;
+  }
+  const activeConfig = state.skillConfigs?.find(c => c.is_active);
+  const activeVersion = activeConfig ? activeConfig.version : null;
+  const configBtn = $('aiConfigBtn');
+  if (configBtn) {
+    configBtn.textContent = activeVersion ? `🛠 AI Config (v${activeVersion})` : '🛠 AI Config';
+  }
+  renderApproach();
+  renderSeries();
+  managePolling();
+  if (state.detailSeries) loadDetail(state.detailSeries, true);
+}
+
+function activeTaskFor(seriesId) {
+  return (state.overview?.active_tasks || []).find(t => t.series_id === seriesId);
+}
+
+function managePolling() {
+  const active = (state.overview?.active_tasks || []).length > 0;
+  if (active && !state.polling) {
+    state.polling = setInterval(async () => {
+      const prev = (state.overview?.active_tasks || []).length;
+      try { state.overview = await api('/api/overview'); } catch { return; }
+      renderSeries();
+      const now = (state.overview.active_tasks || []).length;
+      if (now === 0) {
+        clearInterval(state.polling); state.polling = null;
+        try {
+          const res = await api('/api/tasks?active=false');
+          const failedTasks = (res.tasks || []).filter(t => t.status === 'FAILED' && t.series_id != null);
+          failedTasks.forEach(t => {
+            setRowMsg(t.series_id, 'err', `Task failed: ${t.error}`);
+          });
+        } catch (e) {
+          console.error("Failed to check task history:", e);
+        }
+        renderApproach();
+        if (state.detailSeries) loadDetail(state.detailSeries, true);
+      }
+    }, 2500);
+  } else if (!active && state.polling) {
+    clearInterval(state.polling); state.polling = null;
+  }
+}
+
+// ------------------------------------------------------------- versions
+
+// Snapshots of the deterministic paper pipeline are stored under pseudo
+// skill version 0 (pipeline.PAPER_SKILL_VERSION).
+const PAPER_VERSION = 0;
+// Paper approach v2 is stored under pseudo skill version -1 (pipeline.PAPER_V2_SKILL_VERSION).
+const PAPER_V2_VERSION = -1;
+// Enhanced Approach (AI + Narrative-Gated + Doc-Frequency Filter) -- built on
+// Paper v2 but with two additions of our own, absent from the published
+// paper -- is stored under pseudo skill version -2
+// (pipeline.PAPER_V2_AI_SKILL_VERSION). Distinct AI models under this
+// version are distinguished by model_name, same convention as the (retired)
+// "ai" approach's v{N} (model) keys.
+const PAPER_V2_AI_VERSION = -2;
+// Enhanced Approach + Literature-aware (pipeline.PAPER_V2_AI_LIT_SKILL_VERSION)
+// -- a SEPARATE approach from Enhanced above, not a replacement for it. Adds
+// a hard rule against merging two reports that cite the same journal
+// article. Supportive/discussion evidence, not a main-result approach.
+const PAPER_V2_AI_LIT_VERSION = -3;
+function versionLabel(v) {
+  if (v === PAPER_VERSION) return 'paper';
+  if (v === PAPER_V2_VERSION) return 'paperv2';
+  if (v === PAPER_V2_AI_VERSION) return 'enhanced';
+  if (v === PAPER_V2_AI_LIT_VERSION) return 'enhancedlit';
+  return `v${v}`;
+}
+
+let paperConfig = null;
+let paperConfigV2 = null;
+let paperConfigV2Ai = null;
+
+async function loadPaperConfig() {
+  try {
+    paperConfig = await api('/api/paper-config');
+    try { paperConfigV2 = await api('/api/paper-config-v2'); } catch (e) { paperConfigV2 = null; }
+    try { paperConfigV2Ai = await api('/api/paper-config-v2-ai'); } catch (e) { paperConfigV2Ai = null; }
+    renderApproach();
+  } catch (e) {
+    console.error('Failed to load paper config:', e);
+  }
+}
+
+function renderApproach() {
+  if (!paperConfig) return;
+
+  // 1. Render deterministic Paper Approach card. When "Paper Approach v2" or
+  // "Enhanced Approach" is selected, show v2's (revised) parameters instead
+  // of v1's; the enhanced variant additionally shows the narrative-gate
+  // thresholds and the doc-frequency filter -- both are OUR OWN additions,
+  // absent from the published paper, so strict Paper Approach v2 never uses
+  // them.
+  const approachNow = getSelectedApproach();
+  const isV2AiLit = approachNow === 'paperv2ailit' && paperConfigV2Ai;
+  const isV2Ai = (approachNow === 'paperv2ai' || isV2AiLit) && paperConfigV2Ai;
+  const isV2 = (approachNow === 'paperv2' || isV2Ai) && (paperConfigV2 || paperConfigV2Ai);
+  const activeCfg = isV2Ai ? paperConfigV2Ai : (isV2 ? paperConfigV2 : paperConfig);
+  const subtitleEl = $('paper-approach-subtitle');
+  if (subtitleEl) subtitleEl.textContent = isV2AiLit
+    ? '— Enhanced Approach + Literature-aware: same as Enhanced Approach, plus a hard rule against merging two reports that cite the same journal article — supportive/discussion evidence, not a main-result approach'
+    : isV2Ai
+    ? '— Enhanced Approach: Paper v2’s deterministic pipeline plus AI-assisted narrative extraction (narrative-gated) and a document-frequency filter — both unique to this approach, not part of the published paper'
+    : isV2
+    ? '— InfoViP paper pipeline v2 (revised, deterministic, no AI)'
+    : '— InfoViP paper pipeline (deterministic, no AI)';
+  const gateEl = $('paper-approach-gate-info');
+  if (gateEl) {
+    if (isV2Ai && activeCfg.narrative_gate) {
+      const g = activeCfg.narrative_gate;
+      gateEl.style.display = '';
+      gateEl.innerHTML = `<b>Narrative gate</b> (not in the paper): gating is per rule-based duplicate-candidate cluster, not per report. A cluster escalates to AI only if it contains a pair whose verdict flips depending on narrative features — then every member of that cluster (up to ${g.max_component_size} reports) gets AI extraction together, so no comparison ever mixes AI-extracted and rule-based-extracted reports.<br><b>Document-frequency filter</b> (not in the paper): any narrative token shared by more than ${Math.round((g.narrative_filter_max_doc_freq ?? 0.2) * 100)}% of the series' reports is dropped before scoring — such tokens are class-wide boilerplate (the series' own suspect drug name, generic disease-history phrasing), not case-specific evidence.`;
+    } else {
+      gateEl.style.display = 'none';
+    }
+  }
+  const screeningWindow = activeCfg.screening?.date_window_days || 365;
+  const screeningEl = $('param-screening-window');
+  if (screeningEl) screeningEl.textContent = screeningWindow;
+
+  const pairwise = activeCfg.pairwise || {};
+  const dupThr = pairwise.duplicate_threshold ?? 7.0;
+  const rescueThr = pairwise.rescue_threshold ?? 5.5;
+  const secondThr = pairwise.second_component_threshold ?? 4.5;
+  const secondConf = pairwise.second_component_confirm ?? 0.3;
+  const reqSecond = pairwise.require_second_confirm ? 'Yes' : 'No';
+
+  if ($('param-dup-threshold')) $('param-dup-threshold').textContent = dupThr.toFixed(1);
+  if ($('param-rescue-threshold')) $('param-rescue-threshold').textContent = rescueThr.toFixed(1);
+  if ($('param-second-threshold')) $('param-second-threshold').textContent = secondThr.toFixed(1);
+  if ($('param-second-confirm')) $('param-second-confirm').textContent = secondConf.toFixed(2);
+  if ($('param-req-second-confirm')) $('param-req-second-confirm').textContent = reqSecond;
+
+  const weights = pairwise.weights || {};
+  const tbody = $('approach-weights-tbody');
+  if (tbody) {
+    tbody.innerHTML = renderWeightsRows(weights, pairwise);
+  }
+
+  // 2. Render dynamic AI Approach card
+  const activeAI = state.skillConfigs?.find(c => c.is_active);
+  if (activeAI) {
+    const aiVersionLabel = $('ai-active-version-label');
+    if (aiVersionLabel) aiVersionLabel.textContent = `v${activeAI.version}`;
+
+    const aiCfg = activeAI.config || {};
+    const aiScreening = aiCfg.screening || {};
+    const aiPairwise = aiCfg.pairwise || {};
+    const aiLLM = aiCfg.narrative_llm || {};
+    const approach = getSelectedApproach();
+
+    if (approach === 'ai') {
+      // Show Tiered Funnel layout labels
+      if ($('ai-param-dup-threshold-label')) $('ai-param-dup-threshold-label').textContent = 'Duplicate Threshold';
+      if ($('ai-param-rescue-threshold-label')) $('ai-param-rescue-threshold-label').textContent = 'Rescue Threshold';
+      if ($('ai-param-second-threshold-label')) $('ai-param-second-threshold-label').textContent = '1st Comp Threshold';
+
+      if ($('ai-param-screening-window')) $('ai-param-screening-window').textContent = aiScreening.date_window_days ?? 365;
+      if ($('ai-param-dup-threshold')) $('ai-param-dup-threshold').textContent = (aiPairwise.duplicate_threshold ?? 7.0).toFixed(1);
+      if ($('ai-param-rescue-threshold')) $('ai-param-rescue-threshold').textContent = (aiPairwise.rescue_threshold ?? 5.5).toFixed(1);
+      if ($('ai-param-second-threshold')) $('ai-param-second-threshold').textContent = (aiPairwise.second_component_threshold ?? 4.5).toFixed(1);
+
+      const aiTbody = $('ai-approach-weights-tbody');
+      if (aiTbody) {
+        aiTbody.innerHTML = renderWeightsRows(aiPairwise.weights || {}, aiPairwise);
+      }
+    } else {
+      // Show Legacy Bucketing + AI Call layout labels
+      if ($('ai-param-dup-threshold-label')) $('ai-param-dup-threshold-label').textContent = 'High Conf Threshold';
+      if ($('ai-param-rescue-threshold-label')) $('ai-param-rescue-threshold-label').textContent = 'Ambiguous Threshold';
+      if ($('ai-param-second-threshold-label')) $('ai-param-second-threshold-label').textContent = 'Prefilter Cosine';
+
+      if ($('ai-param-screening-window')) $('ai-param-screening-window').textContent = 'N/A (Bucketing used)';
+      if ($('ai-param-dup-threshold')) $('ai-param-dup-threshold').textContent = '0.85'; // High Conf fallback
+      if ($('ai-param-rescue-threshold')) $('ai-param-rescue-threshold').textContent = '0.55'; // Ambiguous fallback
+      if ($('ai-param-second-threshold')) $('ai-param-second-threshold').textContent = '0.15'; // Prefilter Cosine fallback
+
+      const aiTbody = $('ai-approach-weights-tbody');
+      if (aiTbody) {
+        aiTbody.innerHTML = renderLegacyWeightsRows(aiPairwise.weights || {}, aiPairwise);
+      }
+    }
+
+    if ($('ai-param-sys-prompt')) $('ai-param-sys-prompt').textContent = aiLLM.system_instructions || "none";
+    if ($('ai-param-user-prompt')) $('ai-param-user-prompt').textContent = aiLLM.user_prompt || "none";
+  }
+}
+
+function renderWeightsRows(weights, pairwise) {
+  const fields = [
+    { key: 'sex', label: 'Sex', desc: '' },
+    { key: 'age', label: 'Age', desc: `Tolerance: ${pairwise.age_tolerance_years || 2} years` },
+    { key: 'country', label: 'Country', desc: '' },
+    { key: 'date', label: 'Date', desc: `Exact same day match, partial match window: ${pairwise.date_partial_days || 30} days` },
+    { key: 'drugs', label: 'Drugs (active ingredients)', desc: 'Pair must share active ingredient' },
+    { key: 'events', label: 'Events (PT terms)', desc: 'Pair must share adverse event' },
+    { key: 'diagnosis', label: 'Narrative Diagnosis', desc: 'Regex matching narrative text' },
+    { key: 'medical_history', label: 'Narrative Med History', desc: 'Regex matching narrative text' },
+    { key: 'family_history', label: 'Narrative Family History', desc: 'Regex matching narrative text' },
+    { key: 'symptoms', label: 'Narrative Symptoms', desc: 'Regex matching narrative text' },
+    { key: 'narrative_drugs', label: 'Narrative Drug Mentions', desc: 'Regex matching narrative text' },
+    { key: 'narrative_dates', label: 'Narrative Dates', desc: 'Regex matching narrative text' }
+  ];
+  
+  return fields.map(f => {
+    const w = weights[f.key] || { match: 0, mismatch: 0 };
+    const mPlus = w.match >= 0 ? '+' : '';
+    const mmPlus = w.mismatch >= 0 ? '+' : '';
+    
+    const mStyle = w.match > 0 ? 'color: var(--ok); font-weight: bold;' : (w.match < 0 ? 'color: var(--err);' : 'color: var(--muted);');
+    const mmStyle = w.mismatch > 0 ? 'color: var(--ok);' : (w.mismatch < 0 ? 'color: var(--err); font-weight: bold;' : 'color: var(--muted);');
+    
+    return `
+      <tr>
+        <td>
+          <div style="font-weight: 600">${esc(f.label)}</div>
+          ${f.desc ? `<div style="font-size: 10.5px; color: var(--muted); margin-top: 2px">${esc(f.desc)}</div>` : ''}
+        </td>
+        <td style="text-align: right; ${mStyle}">${mPlus}${w.match.toFixed(1)}</td>
+        <td style="text-align: right; ${mmStyle}">${mmPlus}${w.mismatch.toFixed(1)}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderLegacyWeightsRows(weights, pairwise) {
+  const fields = [
+    { key: 'sex', label: 'Sex', desc: '' },
+    { key: 'age', label: 'Age', desc: `Tolerance: ${pairwise.age_tolerance_years || 10} years` },
+    { key: 'country', label: 'Country', desc: '' },
+    { key: 'date', label: 'Date', desc: `Tolerance: ${pairwise.date_partial_days || 30} days` },
+    { key: 'drugs', label: 'Drugs (active ingredients)', desc: 'Weighted Jaccard coefficient' },
+    { key: 'events', label: 'Events (PT terms)', desc: 'Weighted Jaccard coefficient' },
+    { key: 'diagnosis', label: 'Narrative Diagnosis', desc: 'Adjudicated by LLM in Tier 3' },
+    { key: 'medical_history', label: 'Narrative Med History', desc: 'Adjudicated by LLM in Tier 3' },
+    { key: 'family_history', label: 'Narrative Family History', desc: 'Adjudicated by LLM in Tier 3' },
+    { key: 'symptoms', label: 'Narrative Symptoms', desc: 'Adjudicated by LLM in Tier 3' },
+    { key: 'narrative_drugs', label: 'Narrative Drug Mentions', desc: 'Adjudicated by LLM in Tier 3' },
+    { key: 'narrative_dates', label: 'Narrative Dates', desc: 'Adjudicated by LLM in Tier 3' }
+  ];
+  
+  return fields.map(f => {
+    const isNarrative = ['diagnosis', 'medical_history', 'family_history', 'symptoms', 'narrative_drugs', 'narrative_dates'].includes(f.key);
+    if (isNarrative) {
+      return `
+        <tr>
+          <td>
+            <div style="font-weight: 600; color: var(--muted);">${esc(f.label)}</div>
+            ${f.desc ? `<div style="font-size: 10.5px; color: var(--muted); margin-top: 2px">${esc(f.desc)}</div>` : ''}
+          </td>
+          <td style="text-align: right; color: var(--muted);">—</td>
+          <td style="text-align: right; color: var(--muted);">—</td>
+        </tr>
+      `;
+    }
+    
+    const w = weights[f.key] || { match: 1.0, mismatch: 0 };
+    const m = w.match ?? 1.0;
+    const mStyle = m > 0 ? 'color: var(--ok); font-weight: bold;' : 'color: var(--muted);';
+    
+    return `
+      <tr>
+        <td>
+          <div style="font-weight: 600">${esc(f.label)}</div>
+          ${f.desc ? `<div style="font-size: 10.5px; color: var(--muted); margin-top: 2px">${esc(f.desc)}</div>` : ''}
+        </td>
+        <td style="text-align: right; ${mStyle}">${m.toFixed(1)}</td>
+        <td style="text-align: right; color: var(--muted);">0.0</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+let selectedDetailsVersion = null;
+
+async function viewVersionDetails(version) {
+  try {
+    const data = await api('/api/skill-configs');
+    const cfg = data.configs.find(c => c.version === version);
+    if (!cfg) return;
+    
+    selectedDetailsVersion = cfg;
+    
+    $('detVersionTitle').textContent = `v${cfg.version}`;
+    $('detVersionLabel').value = cfg.label || '';
+    $('detVersionNotes').value = cfg.notes || '';
+    $('detVersionConfig').value = JSON.stringify(cfg.config, null, 2);
+    
+    const actBtn = $('detVersionActivate');
+    const delBtn = $('detVersionDelete');
+    if (cfg.is_active) {
+      actBtn.style.display = 'none';
+      delBtn.style.display = 'none';
+    } else {
+      actBtn.style.display = 'inline-block';
+      actBtn.textContent = 'Activate v' + cfg.version;
+      delBtn.style.display = 'inline-block';
+    }
+    
+    $('versionDetailsModal').classList.add('open');
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function deleteVersionFromDetails() {
+  if (!selectedDetailsVersion) return;
+  const v = selectedDetailsVersion.version;
+  if (!confirm(`Are you sure you want to delete/hide skill version v${v}?\n\nIt will be hidden from the dashboard, but remains archived in the database.`)) return;
+  try {
+    await api(`/api/skill-configs/${v}`, { method: 'DELETE' });
+    closeModal('versionDetailsModal');
+    refreshAll();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function saveVersionMetadata() {
+  if (!selectedDetailsVersion) return;
+  const v = selectedDetailsVersion.version;
+  const label = $('detVersionLabel').value;
+  const notes = $('detVersionNotes').value;
+  try {
+    await api(`/api/skill-configs/${v}/metadata`, {
+      method: 'POST',
+      body: JSON.stringify({ label, notes })
+    });
+    closeModal('versionDetailsModal');
+    refreshAll();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+function useVersionAsTemplate() {
+  if (!selectedDetailsVersion) return;
+  closeModal('versionDetailsModal');
+  
+  $('verConfig').value = JSON.stringify(selectedDetailsVersion.config, null, 2);
+  $('verLabel').value = selectedDetailsVersion.label ? `Copy of ${selectedDetailsVersion.label}` : '';
+  $('versionMsg').textContent = '';
+  syncJSONToForm();
+  $('versionModal').classList.add('open');
+}
+
+async function activateVersionFromDetails() {
+  if (!selectedDetailsVersion) return;
+  closeModal('versionDetailsModal');
+  await activateVersion(selectedDetailsVersion.version);
+}
+
+async function activateVersion(v) {
+  if (!confirm(`Activate skill version v${v}?\n\nBucketing and analysis will run this version. Re-run bucketing on each series afterwards so the buckets match.`)) return;
+  try { await api(`/api/skill-configs/${v}/activate`, { method: 'POST' }); refreshAll(); }
+  catch (e) { alert(e.message); }
+}
+
+function switchFormTab(tabId) {
+  document.querySelectorAll('.form-tab-content').forEach(el => {
+    el.style.display = 'none';
+  });
+  const target = $(tabId);
+  if (tabId === 'tab-prompt') {
+    target.style.display = 'flex';
+  } else {
+    target.style.display = 'block';
+  }
+  document.querySelectorAll('.form-tab-btn').forEach(el => {
+    el.classList.remove('active');
+  });
+  $(`btn-${tabId}`).classList.add('active');
+}
+
+async function openVersionModal() {
+  const data = await api('/api/skill-configs');
+  const active = data.configs.find(c => c.is_active) || data.configs[0];
+  $('verConfig').value = JSON.stringify(active?.config || {}, null, 2);
+  $('verLabel').value = '';
+  $('versionMsg').textContent = '';
+  syncJSONToForm();
+  switchFormTab('tab-bucketing');
+  $('versionModal').classList.add('open');
+}
+
+function syncFormToJSON() {
+  try {
+    let cfg = {};
+    try {
+      cfg = JSON.parse($('verConfig').value || '{}');
+    } catch {}
+
+    cfg.screening = cfg.screening || {};
+    cfg.pairwise = cfg.pairwise || {};
+    cfg.pairwise.weights = cfg.pairwise.weights || {};
+    cfg.narrative_llm = cfg.narrative_llm || {};
+
+    cfg.screening.date_window_days = parseFloat($('fbScreeningWindow').value) || 365;
+
+    const getWeights = (idMatch, idMismatch, defMatch, defMismatch) => {
+      const m = parseFloat($(idMatch).value);
+      const mm = parseFloat($(idMismatch).value);
+      return {
+        match: isNaN(m) ? defMatch : m,
+        mismatch: isNaN(mm) ? defMismatch : mm
+      };
+    };
+
+    cfg.pairwise.weights.sex = getWeights('fwmSexMatch', 'fwmSexMismatch', 0.7, -1.5);
+    cfg.pairwise.weights.age = getWeights('fwmAgeMatch', 'fwmAgeMismatch', 1.5, -2.0);
+    cfg.pairwise.weights.country = getWeights('fwmCountryMatch', 'fwmCountryMismatch', 0.8, -1.5);
+    cfg.pairwise.weights.date = getWeights('fwmDateMatch', 'fwmDateMismatch', 1.5, -1.0);
+    cfg.pairwise.weights.drugs = getWeights('fwmDrugsMatch', 'fwmDrugsMismatch', 3.0, -2.0);
+    cfg.pairwise.weights.events = getWeights('fwmEventsMatch', 'fwmEventsMismatch', 2.5, -2.0);
+    
+    cfg.pairwise.weights.diagnosis = getWeights('fwmDiagMatch', 'fwmDiagMismatch', 2.0, -1.0);
+    cfg.pairwise.weights.medical_history = getWeights('fwmHistMatch', 'fwmHistMismatch', 1.5, -0.5);
+    cfg.pairwise.weights.family_history = getWeights('fwmFamMatch', 'fwmFamMismatch', 1.0, 0.0);
+    cfg.pairwise.weights.symptoms = getWeights('fwmSympMatch', 'fwmSympMismatch', 1.0, -0.5);
+    cfg.pairwise.weights.narrative_drugs = getWeights('fwmNarrDrugsMatch', 'fwmNarrDrugsMismatch', 1.5, -0.5);
+    cfg.pairwise.weights.narrative_dates = getWeights('fwmNarrDatesMatch', 'fwmNarrDatesMismatch', 2.0, 0.0);
+
+    cfg.pairwise.age_tolerance_years = parseFloat($('fsAgeTol').value) ?? 2;
+    cfg.pairwise.date_exact_bonus_days = parseFloat($('fsDateExactBonus').value) ?? 0;
+    cfg.pairwise.date_partial_days = parseFloat($('fsDatePartialDays').value) ?? 30;
+    cfg.pairwise.second_component_threshold = parseFloat($('fsSecondThreshold').value) ?? 4.5;
+    cfg.pairwise.duplicate_threshold = parseFloat($('fsDuplicateThreshold').value) ?? 7.0;
+    cfg.pairwise.rescue_threshold = parseFloat($('fsRescueThreshold').value) ?? 5.5;
+    cfg.pairwise.second_component_confirm = parseFloat($('fsSecondConfirm').value) ?? 0.3;
+
+    cfg.narrative_llm.merge_confidence = [];
+    if ($('flcHigh').checked) cfg.narrative_llm.merge_confidence.push('high');
+    if ($('flcMed').checked) cfg.narrative_llm.merge_confidence.push('medium');
+    if ($('flcLow').checked) cfg.narrative_llm.merge_confidence.push('low');
+    
+    cfg.narrative_llm.system_instructions = $('verSysPrompt').value || "";
+    cfg.narrative_llm.user_prompt = $('verUserPrompt').value || "";
+
+    $('verConfig').value = JSON.stringify(cfg, null, 2);
+  } catch (e) {
+    console.error("Form-to-JSON sync failed:", e);
+  }
+}
+
+function syncJSONToForm() {
+  try {
+    const text = $('verConfig').value;
+    const cfg = JSON.parse(text);
+    if (!cfg || typeof cfg !== 'object') return;
+
+    const scr = cfg.screening || {};
+    const pair = cfg.pairwise || {};
+    const w = pair.weights || {};
+    const n = cfg.narrative_llm || {};
+
+    $('fbScreeningWindow').value = scr.date_window_days ?? 365;
+
+    const setWeights = (field, idMatch, idMismatch, defMatch, defMismatch) => {
+      const val = w[field] || {};
+      $(idMatch).value = val.match ?? defMatch;
+      $(idMismatch).value = val.mismatch ?? defMismatch;
+    };
+
+    setWeights('sex', 'fwmSexMatch', 'fwmSexMismatch', 0.7, -1.5);
+    setWeights('age', 'fwmAgeMatch', 'fwmAgeMismatch', 1.5, -2.0);
+    setWeights('country', 'fwmCountryMatch', 'fwmCountryMismatch', 0.8, -1.5);
+    setWeights('date', 'fwmDateMatch', 'fwmDateMismatch', 1.5, -1.0);
+    setWeights('drugs', 'fwmDrugsMatch', 'fwmDrugsMismatch', 3.0, -2.0);
+    setWeights('events', 'fwmEventsMatch', 'fwmEventsMismatch', 2.5, -2.0);
+    
+    setWeights('diagnosis', 'fwmDiagMatch', 'fwmDiagMismatch', 2.0, -1.0);
+    setWeights('medical_history', 'fwmHistMatch', 'fwmHistMismatch', 1.5, -0.5);
+    setWeights('family_history', 'fwmFamMatch', 'fwmFamMismatch', 1.0, 0.0);
+    setWeights('symptoms', 'fwmSympMatch', 'fwmSympMismatch', 1.0, -0.5);
+    setWeights('narrative_drugs', 'fwmNarrDrugsMatch', 'fwmNarrDrugsMismatch', 1.5, -0.5);
+    setWeights('narrative_dates', 'fwmNarrDatesMatch', 'fwmNarrDatesMismatch', 2.0, 0.0);
+
+    $('fsAgeTol').value = pair.age_tolerance_years ?? 2;
+    $('fsDateExactBonus').value = pair.date_exact_bonus_days ?? 0;
+    $('fsDatePartialDays').value = pair.date_partial_days ?? 30;
+    $('fsSecondThreshold').value = pair.second_component_threshold ?? 4.5;
+    $('fsDuplicateThreshold').value = pair.duplicate_threshold ?? 7.0;
+    $('fsRescueThreshold').value = pair.rescue_threshold ?? 5.5;
+    $('fsSecondConfirm').value = pair.second_component_confirm ?? 0.3;
+
+    const conf = n.merge_confidence || [];
+    $('flcHigh').checked = conf.includes('high');
+    $('flcMed').checked = conf.includes('medium');
+    $('flcLow').checked = conf.includes('low');
+    
+    $('verSysPrompt').value = n.system_instructions || "";
+    $('verUserPrompt').value = n.user_prompt || "";
+  } catch (e) {
+    // Malformed JSON ignored during typing
+  }
+}
+
+async function createVersion() {
+  let config;
+  try { config = JSON.parse($('verConfig').value); }
+  catch (e) { $('versionMsg').textContent = 'Invalid JSON: ' + e.message; return; }
+  try {
+    const res = await api('/api/skill-configs', { method: 'POST', body: JSON.stringify({ config, label: $('verLabel').value || null, activate: true }) });
+    closeModal('versionModal');
+    refreshAll();
+  } catch (e) { $('versionMsg').textContent = e.message; }
+}
+
+// --------------------------------------------------------------- series
+
+function getApproachRunKeys(seriesList, approach) {
+  const keys = new Set();
+  seriesList.forEach(s => {
+    if (!s.runs) return;
+    s.runs.forEach(r => {
+      if (r.f1 == null) return; // Only scored runs
+      if (isHiddenRun(r)) return; // mock/bugged hidden from the matrix by default
+      const isLegacyRun = r.model_name && r.model_name.includes('(Bucketing + AI Call)');
+      if (r.skill_version === 0) {
+        if (approach === 'paper') {
+          keys.add('paper');
+        }
+      } else if (r.skill_version === PAPER_V2_VERSION) {
+        if (approach === 'paperv2') {
+          keys.add('paperv2');
+        }
+      } else if (r.skill_version === PAPER_V2_AI_VERSION) {
+        if (approach === 'paperv2ai') {
+          keys.add(`enhanced (${r.model_name || 'AI Model'})`);
+        }
+      } else if (r.skill_version === PAPER_V2_AI_LIT_VERSION) {
+        if (approach === 'paperv2ailit') {
+          keys.add(`enhancedlit (${r.model_name || 'AI Model'})`);
+        }
+      } else {
+        if (approach === 'legacy' && isLegacyRun) {
+          const cleanModel = r.model_name.replace(' (Bucketing + AI Call)', '');
+          keys.add(`v${r.skill_version} (${cleanModel})`);
+        } else if (approach === 'ai' && !isLegacyRun) {
+          keys.add(`v${r.skill_version} (${r.model_name || 'AI Pipeline'})`);
+        }
+      }
+    });
+  });
+  return Array.from(keys);
+}
+
+function sortRunKeys(keys) {
+  return keys.sort((a, b) => {
+    if (a === 'paper') return -1;
+    if (b === 'paper') return 1;
+    if (a === 'paperv2') return -1;
+    if (b === 'paperv2') return 1;
+    if (a.startsWith('enhancedlit')) return -1;
+    if (b.startsWith('enhancedlit')) return 1;
+    if (a.startsWith('enhanced')) return -1;
+    if (b.startsWith('enhanced')) return 1;
+    const matchA = a.match(/^v(\d+)/);
+    const matchB = b.match(/^v(\d+)/);
+    const verA = matchA ? parseInt(matchA[1], 10) : 999;
+    const verB = matchB ? parseInt(matchB[1], 10) : 999;
+    if (verA !== verB) {
+      return verA - verB;
+    }
+    return a.localeCompare(b);
+  });
+}
+
+function getMetricsForRunKey(s, key, approach) {
+  if (!s.runs) return null;
+  const matchingRuns = [...s.runs].reverse().filter(r => {
+    if (r.f1 == null) return false;
+    if (isHiddenRun(r)) return false; // mock/bugged hidden from the matrix by default
+    if (key === 'paper') {
+      return r.skill_version === 0;
+    }
+    if (key === 'paperv2') {
+      return r.skill_version === PAPER_V2_VERSION;
+    }
+    const aiLitMatch = key.match(/^enhancedlit \((.+)\)$/);
+    if (aiLitMatch) {
+      return r.skill_version === PAPER_V2_AI_LIT_VERSION && (r.model_name || 'AI Model') === aiLitMatch[1];
+    }
+    const aiMatch = key.match(/^enhanced \((.+)\)$/);
+    if (aiMatch) {
+      return r.skill_version === PAPER_V2_AI_VERSION && (r.model_name || 'AI Model') === aiMatch[1];
+    }
+    const match = key.match(/^v(\d+) \((.+)\)$/);
+    if (!match) return false;
+    const ver = parseInt(match[1], 10);
+    const model = match[2];
+    if (r.skill_version !== ver) return false;
+    
+    const cleanModel = r.model_name.replace(' (Bucketing + AI Call)', '');
+    if (cleanModel !== model) return false;
+    
+    const isLegacyRun = r.model_name && r.model_name.includes('(Bucketing + AI Call)');
+    if (approach === 'legacy') {
+      return isLegacyRun;
+    } else {
+      return !isLegacyRun;
+    }
+  });
+  return matchingRuns.length > 0 ? matchingRuns[0] : null;
+}
+
+function renderSeries() {
+  const ov = state.overview;
+  if (!ov) return;
+
+  if (!state.hiddenVersions) {
+    state.hiddenVersions = {};
+  }
+  const buggyToggle = $('showBuggyMockToggle');
+  if (buggyToggle) buggyToggle.checked = state.showBuggyMock;
+  const archivedToggle = $('showArchivedToggle');
+  if (archivedToggle) archivedToggle.checked = state.showArchived;
+  const datasetActionsToggle = $('showDatasetActionsToggle');
+  if (datasetActionsToggle) datasetActionsToggle.checked = state.showDatasetActions;
+  const approach = getSelectedApproach();
+  const allColumns = getApproachRunKeys(ov.series, approach);
+  sortRunKeys(allColumns);
+  
+  // Render column toggles
+  const togglesContainer = $('versionTogglesContainer');
+  if (togglesContainer) {
+    if (allColumns.length > 0) {
+      togglesContainer.style.display = 'flex';
+      $('versionToggles').innerHTML = allColumns.map(col => {
+        const isVisible = !state.hiddenVersions[col];
+        const label = col === 'paper' ? 'paper' : col;
+        return `<span class="chip clickable ${isVisible ? 'toggle-active' : 'muted'}" onclick="toggleVersionColumn('${esc(col)}')">${esc(label)}</span>`;
+      }).join('');
+    } else {
+      togglesContainer.style.display = 'none';
+    }
+  }
+
+  const activeColumns = allColumns.filter(col => !state.hiddenVersions[col]);
+
+  if (!ov.series.length) {
+    $('seriesTable').innerHTML = '<div class="empty">No series yet — add one, then upload its case file (CSV / XLSX / JSON).</div>';
+    return;
+  }
+
+  const head = `<tr>
+    <th>Series</th><th style="text-align:right">Cases</th><th>Ground truth</th>
+    <th style="text-align:right">Runs</th>
+    ${activeColumns.map(col => {
+      const label = col === 'paper' ? 'paper' : col;
+      const m = label.match(/^(.+?) \((.+)\)$/);
+      const main = m ? m[1] : label;
+      const sub = m ? m[2] : null;
+      return `<th class="f1-col" style="text-align:center">
+        <div class="f1-col-label" title="F1 @ ${esc(label)}">F1 @ ${esc(main)}</div>
+        ${sub ? `<div class="f1-col-sub" title="${esc(sub)}">${esc(sub)}</div>` : ''}
+      </th>`;
+    }).join('')}
+    <th>Actions</th></tr>`;
+
+  const rows = ov.series.map(s => {
+    const task = activeTaskFor(s.id);
+    const msg = state.rowMsg[s.id];
+
+    const gt = s.ground_truth.stored
+      ? (s.ground_truth.n_groups === 0
+          ? `<span class="chip warn" title="Empty ground truth: series recorded as having no duplicates">no duplicates</span>`
+          : `<span class="chip ok" title="${esc(s.ground_truth.name || '')}">${s.ground_truth.n_groups} groups / ${s.ground_truth.n_cases} cases</span>`)
+      : `<span class="chip warn">missing</span>`;
+
+    const cells = activeColumns.map(col => {
+      const c = getMetricsForRunKey(s, col, approach);
+      return `<td style="text-align:center">${c && c.f1 != null
+        ? `<span class="f1" title="P=${c.precision} R=${c.recall} — ${esc(c.model_name || '')} — ${esc(c.created_at || '')}">${Number(c.f1).toFixed(3)}</span>`
+        : '<span style="color:#bbb">—</span>'}</td>`;
+    }).join('');
+
+    let tooltipLines = [];
+    const visibleRuns = (s.runs || []).filter(r => !isHiddenRun(r));
+    const nHiddenRuns = (s.runs || []).length - visibleRuns.length;
+    if (visibleRuns.length > 0) {
+      const latest = visibleRuns[visibleRuns.length - 1];
+      const latestVer = versionLabel(latest.skill_version);
+      const latestAudited = latest.n_audits > 0 ? `Yes (${latest.n_audits} audit(s))` : 'No';
+      tooltipLines.push(`LATEST RUN DETAILS:`);
+      tooltipLines.push(`• Run ID: #${latest.id}`);
+      tooltipLines.push(`• Approach/Version: ${latestVer}`);
+      tooltipLines.push(`• Model/Pipeline: ${latest.model_name || 'N/A'}`);
+      tooltipLines.push(`• Created At: ${latest.created_at || 'N/A'}`);
+      tooltipLines.push(`• Scored: ${latest.f1 != null ? `Yes (F1=${latest.f1.toFixed(3)})` : 'No (missing GT)'}`);
+      tooltipLines.push(`• Audited: ${latestAudited}`);
+      if (latest.notes) tooltipLines.push(`• ⚠ ${latest.notes}`);
+      tooltipLines.push(``);
+
+      tooltipLines.push(`RUN HISTORY (Total: ${visibleRuns.length}, newest first):`);
+      [...visibleRuns].reverse().forEach(r => {
+        const ver = versionLabel(r.skill_version);
+        const scoreStr = r.f1 != null ? `F1=${r.f1.toFixed(3)}` : 'unscored';
+        const auditStr = r.n_audits > 0 ? `${r.n_audits} audits` : 'not audited';
+        tooltipLines.push(`#${r.id} (${ver}): ${scoreStr} | ${auditStr} | ${r.is_mock ? 'Mock' : 'Real'}`);
+      });
+      if (nHiddenRuns > 0) tooltipLines.push(`\n(${nHiddenRuns} mock/bugged/archived run(s) hidden — see the toggles above the table)`);
+    } else if (nHiddenRuns > 0) {
+      tooltipLines.push(`All ${nHiddenRuns} run(s) for this series are mock/bugged/archived and hidden — see the toggles above the table.`);
+    } else {
+      tooltipLines.push(`No runs recorded for this series.`);
+    }
+    const tooltipText = tooltipLines.join('\n');
+
+    let actions;
+    if (task) {
+      const pct = task.total ? Math.round(task.processed / task.total * 100) : null;
+      actions = `<div><b style="font-size:12px">${esc(task.name)}</b>
+        <span style="font-size:12px;color:var(--muted)">${task.status === 'PENDING' ? 'queued' : (task.total ? `${task.processed}/${task.total}` : 'running…')}</span>
+        <button class="small danger" onclick="cancelTask(${task.id})">✕</button>
+        ${pct != null ? `<div class="progress"><div style="width:${pct}%"></div></div>` : ''}</div>`;
+    } else {
+      actions = `<span class="actions">
+        ${state.showDatasetActions ? `<button class="small" title="Upload / replace the case file (CSV, XLSX, JSON)" onclick="pickCases(${s.id})">📄 Cases</button>` : ''}
+        ${state.showDatasetActions ? `<button class="small" title="Upload / replace the ground truth JSON (empty = series has no duplicates)" onclick="pickGT(${s.id})">🎯 GT</button>` : ''}
+        <button class="small" title="Run the selected active deduplication approach" ${s.n_cases ? '' : 'disabled'} onclick="runAnalysis(${s.id})">▶ Analyze</button>
+        <button class="small" title="Latest comparison, audits, and run history" ${(s.n_runs || s.n_mock_runs) ? '' : 'disabled'} onclick="loadDetail(${s.id})">🔍 View</button>
+        ${state.showDatasetActions ? `<button class="small danger" title="Delete the series and all its study data" onclick="deleteSeries(${s.id}, '${esc(s.name)}')">🗑</button>` : ''}
+      </span>`;
+    }
+
+    return `<tr>
+      <td><b>${esc(s.name)}</b></td>
+      <td style="text-align:right">${s.n_cases}</td>
+      <td>${gt}</td>
+      <td style="text-align:right;cursor:help;" title="${esc(tooltipText)}">${s.n_scored_runs}/${s.n_runs}${s.n_mock_runs ? `<span style="color:var(--warn);font-size:10px;margin-left:3px">+${s.n_mock_runs}🤖</span>` : ''}<div style="font-size:10px;color:#aaa">scored/total</div></td>
+      ${cells}
+      <td>${actions}${msg ? `<div class="rowmsg ${msg.kind}">${esc(msg.text)}</div>` : ''}</td>
+    </tr>`;
+  }).join('');
+
+  $('seriesTable').innerHTML = `<div style="overflow-x:auto"><table>${head}${rows}</table></div>`;
+}
+
+async function createSeries() {
+  const name = $('newSeriesName').value.trim();
+  if (!name) return;
+  try { await api('/api/series', { method: 'POST', body: JSON.stringify({ name }) }); $('newSeriesName').value = ''; refreshAll(); }
+  catch (e) { alert(e.message); }
+}
+
+async function deleteSeries(id, name) {
+  if (!confirm(`Delete series "${name}" and ALL of its study data (cases, ground truths, run snapshots, audits)? This cannot be undone.`)) return;
+  try { await api(`/api/series/${id}`, { method: 'DELETE' }); if (state.detailSeries === id) { state.detailSeries = null; $('detailCard').style.display = 'none'; } refreshAll(); }
+  catch (e) { alert(e.message); }
+}
+
+// ------------------------------------------------------ per-series actions
+
+let pendingSeries = null;
+
+function pickCases(seriesId) { pendingSeries = seriesId; $('caseFile').click(); }
+$('caseFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0]; e.target.value = '';
+  if (!file || pendingSeries == null) return;
+  const sid = pendingSeries;
+  const fd = new FormData(); fd.append('file', file);
+  setRowMsg(sid, 'info', 'Uploading cases…');
+  try { const res = await api(`/api/series/${sid}/cases`, { method: 'POST', body: fd }); setRowMsg(sid, 'ok', res.message); }
+  catch (err) { setRowMsg(sid, 'err', err.message); }
+  refreshAllKeepMsgs();
+});
+
+function pickGT(seriesId) { pendingSeries = seriesId; $('gtFile').click(); }
+$('gtFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0]; e.target.value = '';
+  if (!file || pendingSeries == null) return;
+  const sid = pendingSeries;
+  try {
+    const parsed = JSON.parse(await file.text());
+    const groups = parseGroundTruth(parsed);
+    const res = await api(`/api/series/${sid}/ground-truth`, {
+      method: 'POST',
+      body: JSON.stringify({ groups, name: file.name.replace(/\.json$/i, ''), source_filename: file.name }),
+    });
+    setRowMsg(sid, res.empty ? 'warn' : 'ok', res.empty
+      ? 'Empty ground truth stored — series recorded as having NO duplicates; any group the system finds counts as a false positive.'
+      : `Ground truth stored: ${res.n_groups} groups / ${res.n_cases} cases.`);
+  } catch (err) { setRowMsg(sid, 'err', err.message); }
+  refreshAllKeepMsgs();
+});
+
+// Direct config import into the New Skill Version editor: a bare config
+// object or an exported {"config": {...}, "label"?} wrapper.
+$('verImportFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0]; e.target.value = '';
+  if (!file) return;
+  try {
+    let parsed = JSON.parse(await file.text());
+    if (parsed && typeof parsed === 'object' && parsed.config && typeof parsed.config === 'object') {
+      if (parsed.label && !$('verLabel').value) $('verLabel').value = String(parsed.label);
+      parsed = parsed.config;
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('The file must contain a JSON config object.');
+    }
+    $('verConfig').value = JSON.stringify(parsed, null, 2);
+    syncJSONToForm();
+    $('versionMsg').style.color = 'var(--ok)';
+    $('versionMsg').textContent = `Imported ${file.name} — review the tabs, then Create & activate.`;
+  } catch (err) {
+    $('versionMsg').style.color = 'var(--err)';
+    $('versionMsg').textContent = `Import failed: ${err.message}`;
+  }
+});
+
+// Accepts [["id",...],...] | {"groups":[...]} | the group-level comparison format.
+function parseGroundTruth(parsed) {
+  if (Array.isArray(parsed) && parsed.every(g => Array.isArray(g))) return parsed.map(g => g.map(String));
+  if (parsed && Array.isArray(parsed.groups) && parsed.groups.every(g => Array.isArray(g))) return parsed.groups.map(g => g.map(String));
+  const entries = Array.isArray(parsed) ? parsed : [parsed];
+  const entry = entries.find(e => e && Array.isArray(e.groups));
+  if (!entry) throw new Error('Unrecognized ground-truth file format.');
+  const byIndex = {};
+  for (const g of entry.groups) {
+    const idx = g.gt_match?.gt_group_index;
+    if (idx == null || !Array.isArray(g.cases)) continue;
+    byIndex[idx] = byIndex[idx] || new Set();
+    for (const c of g.cases) if (c.tag === 'matched' || c.tag === 'missed') byIndex[idx].add(String(c.case_id));
+  }
+  return Object.values(byIndex).map(s => [...s]).filter(g => g.length >= 2);
+}
+
+async function refreshAllKeepMsgs() {
+  try {
+    state.overview = await api('/api/overview');
+    const cfgData = await api('/api/skill-configs');
+    state.skillConfigs = cfgData.configs || [];
+    const activeConfig = state.skillConfigs?.find(c => c.is_active);
+    const activeVersion = activeConfig ? activeConfig.version : null;
+    const configBtn = $('aiConfigBtn');
+    if (configBtn) {
+      configBtn.textContent = activeVersion ? `🛠 AI Config (v${activeVersion})` : '🛠 AI Config';
+    }
+    renderApproach();
+    renderSeries();
+    managePolling();
+  } catch {}
+}
+
+async function runBucketing(sid) {
+  if (!confirm('Reset & re-run bucketing for this series?\n\nCurrent buckets are cleared and recomputed under the ACTIVE skill version. Run snapshots and audits are immutable history and are kept.')) return;
+  setRowMsg(sid, 'info', 'Bucketing…');
+  try { const res = await api(`/api/series/${sid}/bucket`, { method: 'POST' }); setRowMsg(sid, 'ok', `Bucketing complete — ${res.bucket_count} bucket(s) from ${res.cases_tagged} case(s) under v${res.skill_version}.`); }
+  catch (e) { setRowMsg(sid, 'err', e.message); }
+  refreshAllKeepMsgs();
+}
+
+async function runAnalysis(sid) {
+  const series = state.overview?.series?.find(item => item.id === sid);
+  const metricsByVersion = series?.metrics_by_version || {};
+  const approach = getSelectedApproach();
+  const configs = state.overview?.skill_configs || [];
+  const activeConfig = configs.find(c => c.is_active);
+  const activeVersion = activeConfig ? activeConfig.version : 1;
+  const targetVersion = approach === 'paper' ? PAPER_VERSION
+    : approach === 'paperv2' ? PAPER_V2_VERSION
+    : approach === 'paperv2ai' ? PAPER_V2_AI_VERSION
+    : approach === 'paperv2ailit' ? PAPER_V2_AI_LIT_VERSION
+    : activeVersion;
+  const hasResultForActive = metricsByVersion[String(targetVersion)] != null;
+
+  if (hasResultForActive && !confirm('This series already has a result for the selected approach.\n\nRe-running replaces that result in the display (the previous run remains in the run history). Continue?')) return;
+  
+  if (approach === 'ai') {
+    try { const res = await api(`/api/series/${sid}/analyze-ai`, { method: 'POST' }); setRowMsg(sid, 'info', 'AI pipeline started (Tiered Funnel) — scored & snapshotted automatically when a ground truth is stored.'); }
+    catch (e) { setRowMsg(sid, 'err', e.message); }
+  } else if (approach === 'legacy') {
+    try { const res = await api(`/api/series/${sid}/analyze-legacy`, { method: 'POST' }); setRowMsg(sid, 'info', 'Bucketing + AI Call pipeline started — scored & snapshotted automatically when a ground truth is stored.'); }
+    catch (e) { setRowMsg(sid, 'err', e.message); }
+  } else if (approach === 'paperv2') {
+    try { const res = await api(`/api/series/${sid}/analyze-v2`, { method: 'POST' }); setRowMsg(sid, 'info', 'Paper pipeline v2 started (revised, deterministic, no AI) — scored & snapshotted automatically when a ground truth is stored.'); }
+    catch (e) { setRowMsg(sid, 'err', e.message); }
+  } else if (approach === 'paperv2ai') {
+    try { const res = await api(`/api/series/${sid}/analyze-v2-ai`, { method: 'POST' }); setRowMsg(sid, 'info', 'Enhanced Approach pipeline started (AI + narrative-gated + doc-frequency filter) — scored & snapshotted automatically when a ground truth is stored.'); }
+    catch (e) { setRowMsg(sid, 'err', e.message); }
+  } else if (approach === 'paperv2ailit') {
+    try { const res = await api(`/api/series/${sid}/analyze-v2-ai-lit`, { method: 'POST' }); setRowMsg(sid, 'info', 'Enhanced Approach (Literature-aware) pipeline started — scored & snapshotted automatically when a ground truth is stored.'); }
+    catch (e) { setRowMsg(sid, 'err', e.message); }
+  } else {
+    try { const res = await api(`/api/series/${sid}/analyze`, { method: 'POST' }); setRowMsg(sid, 'info', 'Paper pipeline started (deterministic, no AI) — scored & snapshotted automatically when a ground truth is stored.'); }
+    catch (e) { setRowMsg(sid, 'err', e.message); }
+  }
+  refreshAllKeepMsgs();
+}
+
+async function runBatchAudit(sid, nAudits = 0) {
+  // With existing audits, offer a full re-audit (e.g. after a prompt fix) vs
+  // the default gap-filling run.
+  let force = false;
+  if (nAudits > 0) {
+    force = confirm('This series already has stored audits.\n\nOK = RE-AUDIT everything (replaces the shown explanations — use after a prompt/skill change)\nCancel = only audit cases that have no audit yet');
+  }
+  try {
+    await api(`/api/series/${sid}/batch-audit?force=${force}`, { method: 'POST' });
+    setRowMsg(sid, 'info', `Batch audit started — one AI call per discrepant group${force ? ' (re-auditing everything)' : '; already-audited cases are skipped'}.`);
+  }
+  catch (e) { setRowMsg(sid, 'err', e.message); }
+  refreshAllKeepMsgs();
+}
+
+async function cancelTask(taskId) {
+  try { await api(`/api/tasks/${taskId}/cancel`, { method: 'POST' }); } catch {}
+}
+
+// --------------------------------------------------------------- detail
+
+const TAG_META = { matched: ['ok', 'MATCHED'], new: ['new', 'NEW (system only)'], missed: ['err', 'MISSED (ground truth only)'] };
+// Column tinting for the side-by-side comparison, per case category.
+const TAG_BG = { matched: '#f1f8f1', new: '#faf4fb', missed: '#fdf3f3' };
+const TAG_BORDER = { matched: '#a5d6a7', new: '#ce93d8', missed: '#ef9a9a' };
+
+// Verdict rendering is context-aware: the same verdict value means opposite
+// real-world outcomes for "missed" vs "new" cases, so spell it out.
+function auditVerdictMeta(audit, tag) {
+  const v = audit.verdict;
+  if (v === 'uncertain') return ['warn', 'Uncertain — content cannot settle it'];
+  if (tag === 'new') {
+    return v === 'system_correct'
+      ? ['ok', 'Real duplicates — the ground truth missed this link']
+      : ['err', 'False link — the system over-merged'];
+  }
+  // missed
+  return v === 'system_correct'
+    ? ['ok', 'Not a true duplicate — the ground truth looks wrong here']
+    : ['err', 'True duplicate — the system missed it'];
+}
+
+// One card per discrepant case inside a group panel: the AI audit's verdict
+// and reasoning are the headline; case identity is the card header.
+function renderAuditCard(c, audit) {
+  const [kind, tagLabel] = TAG_META[c.tag] || ['muted', c.tag];
+  const border = TAG_BORDER[c.tag] || '#e0e0e0';
+  let body;
+  if (audit) {
+    const [vk, vl] = auditVerdictMeta(audit, c.tag);
+    body = `
+      <div class="verdict ${vk}">${esc(vl)}
+        <span class="chip muted" style="margin-left:6px">confidence: ${esc(audit.confidence)}</span>
+        ${audit.blocking_mismatch ? '<span class="chip warn">bucket mismatch</span>' : ''}
+      </div>
+      <div class="reasoning">${esc(audit.reasoning || '(no reasoning returned)')}</div>
+      <div class="cause">Cause: ${esc(CAUSE_LABELS[audit.likely_cause] || audit.likely_cause)}</div>
+      ${audit.improvement_clue ? `<div class="clue">💡 ${esc(audit.improvement_clue)}</div>` : ''}`;
+  } else {
+    body = `<div class="cause" style="margin-top:2px">No AI audit yet — run the 🧠 batch audit on this series to get the "why missed / why included?" explanation here.</div>`;
+  }
+  return `<div class="audit-card" style="border-left-color:${border}">
+    <div class="audit-card-head"><span class="chip ${kind}">${tagLabel}</span> <b>${esc(c.case_id)}</b></div>
+    ${body}
+  </div>`;
+}
+const CAUSE_LABELS = {
+  blocking_mismatch: 'Bucket mismatch — the system never compared this case against the group',
+  insufficient_narrative_detail: 'Narratives lack the specific shared detail needed',
+  conflicting_details: 'Concrete details contradict the group',
+  shared_specific_detail_present: 'A decisive shared detail settles it',
+  ground_truth_questionable: 'The ground-truth assignment looks unsupported',
+  other: 'Other',
+};
+
+async function loadDetail(seriesId, silent = false, snapshotId = null) {
+  state.detailSeries = seriesId;
+  const series = state.overview?.series.find(s => s.id === seriesId);
+  $('detailCard').style.display = '';
+  $('detailTitle').innerHTML = `Series detail — ${esc(series?.name || seriesId)}`
+    + (snapshotId ? ` <span class="chip muted">pinned to run #${snapshotId}</span> <button class="small" onclick="loadDetail(${seriesId})">show latest</button>` : '')
+    + ` <button class="small" style="float:right" onclick="closeDetail()">✕ Close</button>`;
+  if (!silent) $('detailBody').innerHTML = '<div class="empty">Loading…</div>';
+
+  let comparison = null, snapshots = [];
+  try { snapshots = (await api(`/api/series/${seriesId}/snapshots`)).snapshots; } catch {}
+  try { comparison = await api(`/api/series/${seriesId}/comparison${snapshotId ? `?snapshot_id=${snapshotId}` : ''}`); } catch (e) { /* no scored run yet */ }
+
+  let html = '';
+
+  if (comparison) {
+    const p = comparison.pair_level || {}, g = comparison.group_level || {};
+    const mockBanner = comparison.is_mock ? `<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:7px 12px;margin-bottom:10px;font-size:12.5px;font-weight:600;color:#856404">⚠️ This is a <b>MOCK</b> run — results are simulated and should not be interpreted as real analysis outcomes.</div>` : '';
+    const notesBanner = comparison.notes ? `<div style="background:#f8d7da;border:1px solid #dc3545;border-radius:6px;padding:7px 12px;margin-bottom:10px;font-size:12.5px;font-weight:600;color:#721c24">🐞 ${esc(comparison.notes)}</div>` : '';
+    const archivedBanner = comparison.is_archived ? `<div style="background:#e2e3e5;border:1px solid #6c757d;border-radius:6px;padding:7px 12px;margin-bottom:10px;font-size:12.5px;font-weight:600;color:#41464b">📦 This run uses a <b>retired approach/version</b> and is kept for historical reference only — it is not a bug, just no longer the active comparison baseline.</div>` : '';
+    
+    const durStr = comparison.duration_seconds != null ? `${comparison.duration_seconds}s` : 'N/A';
+    const callsStr = comparison.llm_calls != null ? `${comparison.llm_calls} calls` : '0 calls';
+    const tokenStr = comparison.total_tokens ? `${comparison.total_tokens.toLocaleString()} tokens` : '';
+    const costStr = comparison.cost != null && comparison.cost > 0 ? `$${Number(comparison.cost).toFixed(4)}` : '';
+    const costTokenLabel = [costStr, tokenStr].filter(Boolean).join(' / ');
+    
+    let approachLabel = 'Paper';
+    if (comparison.skill_version === PAPER_V2_VERSION) {
+      approachLabel = 'Paper v2';
+    } else if (comparison.skill_version === PAPER_V2_AI_VERSION) {
+      approachLabel = 'Enhanced';
+    } else if (comparison.skill_version === PAPER_V2_AI_LIT_VERSION) {
+      approachLabel = 'Enhanced + Literature-aware';
+    } else if (comparison.skill_version !== 0) {
+      approachLabel = (comparison.model_name && comparison.model_name.includes('(Bucketing + AI Call)')) ? 'Bucket + AI' : 'Tiered Funnel';
+    }
+    const cleanModelName = (comparison.model_name || '').replace(' (Bucketing + AI Call)', '');
+
+    html += `${mockBanner}${notesBanner}${archivedBanner}
+      <div style="margin-bottom:12px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+        <span class="chip ${comparison.is_mock ? 'warn' : 'ok'}" style="font-weight:bold">Run #${comparison.snapshot_id}</span>
+        <span class="chip info"><b>Approach:</b> ${approachLabel}</span>
+        <span class="chip info"><b>Version:</b> ${versionLabel(comparison.skill_version)}</span>
+        <span class="chip info"><b>AI Model:</b> ${esc(comparison.is_mock ? '🤖 mock AI' : (cleanModelName || 'None'))}</span>
+        <span class="chip info"><b>Duration:</b> ${durStr}</span>
+        <span class="chip info"><b>LLM Calls:</b> ${callsStr}</span>
+        ${costTokenLabel ? `<span class="chip info"><b>Usage:</b> ${esc(costTokenLabel)}</span>` : ''}
+        <span class="chip muted" style="font-size:11px">${esc(comparison.created_at || '')}</span>
+      </div>`;
+    html += `<div class="metric-strip">
+      ${[['Precision', p.precision], ['Recall', p.recall], ['F1', p.f1]].map(([l, v]) =>
+        `<div class="m"><b>${v != null ? Number(v).toFixed(3) : '—'}</b><span>${l}</span></div>`).join('')}
+      ${[['Exact groups', g.exact_matches, 'var(--ok)'], ['Partial', g.partial_matches, 'var(--warn)'],
+         ['New groups', g.new_groups, 'var(--new)'], ['Fully missed', g.fully_missed_groups, 'var(--err)'],
+         ['New cases', g.new_cases, 'var(--new)'], ['Missed cases', g.missed_cases, 'var(--err)']].map(([l, v, c]) =>
+        `<div class="m"><b style="color:${c}">${v ?? 0}</b><span>${l}</span></div>`).join('')}
+    </div>`;
+
+    const discrepant = (comparison.groups || []).filter(gr => gr.n_new_cases > 0 || gr.n_missed_cases > 0);
+    const rank = gr => gr.group_status === 'fully_missed' ? 0 : gr.group_status === 'new' ? 1 : 2;
+    discrepant.sort((a, b) => rank(a) - rank(b));
+    html += `<h2 style="margin-top:14px">Discrepant groups (${discrepant.length})</h2>`;
+    if (!discrepant.length) html += '<div class="empty">The run matches the ground truth exactly. 🎉</div>';
+    state.compareGroups = discrepant;
+    state.compareSeriesId = seriesId;
+    discrepant.forEach((gr, gi) => {
+      const color = gr.group_status === 'fully_missed' ? 'var(--err)' : gr.group_status === 'new' ? 'var(--new)' : 'var(--warn)';
+      const label = gr.group_status === 'fully_missed' ? 'FULLY MISSED GROUP' : gr.group_status === 'new' ? 'NEW GROUP' : 'PARTIAL MATCH';
+      const discrepantCases = gr.cases.filter(c => c.tag !== 'matched');
+      const matchedCases = gr.cases.filter(c => c.tag === 'matched');
+      html += `<details class="group" style="border-left-color:${color}">
+        <summary><span class="chip" style="color:${color};border-color:${color}">${label}</span>
+          ${gr.n_matched_cases ? `<span class="chip ok">${gr.n_matched_cases} matched</span>` : ''}
+          ${gr.n_new_cases ? `<span class="chip new">${gr.n_new_cases} new</span>` : ''}
+          ${gr.n_missed_cases ? `<span class="chip err">${gr.n_missed_cases} missed</span>` : ''}
+          ${gr.gt_match ? `<span class="chip muted">J=${Number(gr.gt_match.jaccard).toFixed(2)}</span>` : ''}
+          <span style="flex:1"></span>
+          <button class="small" onclick="event.preventDefault();event.stopPropagation();openCompare(${gi})">⤢ Compare cases</button>
+        </summary>
+        <div class="cases">
+          ${discrepantCases.map(c => renderAuditCard(c, comparison.audits[`${c.case_id}:${c.tag}`])).join('')}
+          ${matchedCases.length ? `<div style="margin:8px 0 4px;font-size:12px;color:var(--muted)">
+            <b>Matched members</b> (agreed by both): ${matchedCases.map(c => `<span class="chip ok">${esc(c.case_id)}</span>`).join(' ')}
+          </div>` : ''}
+        </div>
+      </details>`;
+    });
+  } else {
+    html += '<div class="empty">No scored run yet — store a ground truth and run the analysis.</div>';
+  }
+
+  if (snapshots.length) {
+    const realSnaps = snapshots.filter(s => !s.is_mock);
+    const mockSnaps = snapshots.filter(s => s.is_mock);
+    const buggySnaps = snapshots.filter(s => s.notes);
+    const archivedSnaps = snapshots.filter(s => s.is_archived);
+    const visibleSnaps = snapshots.filter(s => !isHiddenRun(s));
+    const nHidden = snapshots.length - visibleSnaps.length;
+    html += `<h2 style="margin-top:16px">Run history (${realSnaps.length} real${mockSnaps.length ? `, ${mockSnaps.length} mock` : ''}${buggySnaps.length ? `, ${buggySnaps.length} bugged` : ''}${archivedSnaps.length ? `, ${archivedSnaps.length} archived` : ''})</h2>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer">
+        <input type="checkbox" ${state.showBuggyMock ? 'checked' : ''} onchange="toggleBuggyMockVisibility()">
+        Show mock &amp; bugged runs
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer">
+        <input type="checkbox" ${state.showArchived ? 'checked' : ''} onchange="toggleArchivedVisibility()">
+        Show archived runs
+      </label>
+      ${nHidden ? `<span style="font-size:12.5px;color:var(--muted)">(${nHidden} hidden)</span>` : ''}
+    </div>
+    <div style="overflow-x:auto"><table>
+      <tr><th>Run</th><th>Date</th><th>Skill</th><th>Model</th><th style="text-align:right">Groups</th>
+        <th style="text-align:right">P</th><th style="text-align:right">R</th><th style="text-align:right">F1</th>
+        <th style="text-align:right">LLM calls</th><th style="text-align:right">Tokens</th><th style="text-align:right">Cost</th><th style="text-align:right">Duration</th><th></th></tr>
+      ${visibleSnaps.map(s => `<tr style="${s.is_mock ? 'opacity:0.6;background:repeating-linear-gradient(135deg,transparent,transparent 6px,rgba(255,160,0,0.09) 6px,rgba(255,160,0,0.09) 12px)' : (s.notes ? 'background:rgba(220,53,69,0.07)' : (s.is_archived ? 'background:rgba(108,117,125,0.08)' : ''))}">
+        <td>#${s.id}${s.is_mock ? ' <span class="chip warn" style="font-size:9px;padding:1px 4px">MOCK</span>' : ''}${s.notes ? ` <span class="chip" style="font-size:9px;padding:1px 4px;background:#dc3545;color:#fff" title="${esc(s.notes)}">🐞 BUGGED</span>` : ''}${s.is_archived ? ` <span class="chip" style="font-size:9px;padding:1px 4px;background:#6c757d;color:#fff" title="Retired approach/version">📦 ARCHIVED</span>` : ''}</td><td style="white-space:nowrap">${esc(s.created_at)}</td>
+        <td><b>${s.skill_version != null ? versionLabel(s.skill_version) : '—'}</b></td><td>${esc(s.is_mock ? '🤖 mock' : (s.model_name || s.ai_provider || '—'))}</td>
+        <td style="text-align:right">${s.n_groups}</td>
+        <td style="text-align:right">${s.pair_level ? Number(s.pair_level.precision).toFixed(3) : '—'}</td>
+        <td style="text-align:right">${s.pair_level ? Number(s.pair_level.recall).toFixed(3) : '—'}</td>
+        <td style="text-align:right" class="f1">${s.pair_level ? Number(s.pair_level.f1).toFixed(3) : '—'}</td>
+        <td style="text-align:right">${s.llm_calls ?? '—'}</td>
+        <td style="text-align:right">${s.total_tokens?.toLocaleString?.() ?? '—'}</td>
+        <td style="text-align:right">${s.cost != null ? '$' + Number(s.cost).toFixed(4) : '—'}</td>
+        <td style="text-align:right">${s.duration_seconds != null ? s.duration_seconds + 's' : '—'}</td>
+        <td>${s.pair_level ? `<button class="small" onclick="viewSnapshot(${seriesId}, ${s.id})">view</button>` : ''}</td>
+      </tr>`).join('')}
+    </table></div>`;
+  }
+
+  $('detailBody').innerHTML = html;
+}
+
+function viewSnapshot(seriesId, snapshotId) {
+  loadDetail(seriesId, false, snapshotId);
+}
+
+function closeDetail() { state.detailSeries = null; $('detailCard').style.display = 'none'; }
+
+function toggleVersionColumn(v) {
+  state.hiddenVersions = state.hiddenVersions || {};
+  if (state.hiddenVersions[v]) {
+    delete state.hiddenVersions[v];
+  } else {
+    state.hiddenVersions[v] = true;
+  }
+  renderSeries();
+}
+
+function downloadRuns() { window.location = API_BASE + '/api/export/runs.csv'; }
+
+// ------------------------------------------------------------- settings
+
+function selectModelCard(el) {
+  el.parentNode.querySelectorAll('.model-option-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+  const radio = el.querySelector('input[type="radio"]');
+  if (radio && !radio.disabled) {
+    radio.checked = true;
+    el.classList.add('selected');
+  }
+}
+
+async function openSettings() {
+  const s = await api('/api/settings');
+  const defaults = ["llama-3.1", "llama-4", "sonnet-4.6", "haiku-4.5"];
+  $('modelOptions').innerHTML = s.options.map(o => {
+    const isDefault = defaults.includes(o.key);
+    const deleteBtn = isDefault ? '' : `<button class="small danger" style="float:right;padding:0px 4px;font-size:10px" onclick="deleteCustomModel(event, '${o.key}')">🗑 Delete</button>`;
+    const isChecked = o.key === s.model_option;
+    return `
+      <label class="model-option-card ${isChecked ? 'selected' : ''}" onclick="selectModelCard(this)">
+        <input type="radio" name="modelOption" value="${o.key}" ${isChecked ? 'checked' : ''} ${o.configured ? '' : 'disabled'}>
+        <span style="flex:1">
+          <b>${esc(o.label)}</b>
+          ${o.configured ? '<span class="chip ok">configured</span>' : '<span class="chip err" title="Fill in this option\'s keys in .env and restart the server">not configured</span>'}
+          ${deleteBtn}<br>
+          <span style="font-size:12px;color:var(--muted)">
+            ${o.provider === 'elsa' ? `Elsa proxy — engine ${esc(o.model || '(missing id)')}` : `${esc(o.base_url || '(missing URL)')} — ${esc(o.model || '(missing model)')}`}
+          </span>
+        </span>
+      </label>`;
+  }).join('');
+  $('settingsMsg').textContent = '';
+  $('settingsModal').classList.add('open');
+}
+
+async function addCustomModel() {
+  const key = $('custKey').value.trim();
+  const label = $('custLabel').value.trim();
+  const provider = $('custProvider').value;
+  const model = $('custModel').value.trim();
+  const base_url = $('custBaseUrl').value.trim();
+  const api_key = $('custApiKey').value.trim();
+
+  if (!key || !label || !model || !base_url) {
+    alert("Please fill in model key, label, model ID, and base URL.");
+    return;
+  }
+  try {
+    await api('/api/models', {
+      method: 'POST',
+      body: JSON.stringify({ key, label, provider, model, base_url, api_key })
+    });
+    $('custKey').value = '';
+    $('custLabel').value = '';
+    $('custModel').value = '';
+    $('custBaseUrl').value = '';
+    $('custApiKey').value = '';
+    openSettings();
+  } catch (e) { alert(e.message); }
+}
+
+async function deleteCustomModel(e, key) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!confirm(`Delete custom model config '${key}'?`)) return;
+  try {
+    await api(`/api/models/${key}`, { method: 'DELETE' });
+    openSettings();
+  } catch (err) { alert(err.message); }
+}
+
+async function saveSettings() {
+  const chosen = document.querySelector('input[name=modelOption]:checked');
+  if (!chosen) { $('settingsMsg').textContent = 'Pick a model option.'; $('settingsMsg').style.color = 'var(--err)'; return; }
+  try {
+    const res = await api('/api/settings', { method: 'POST', body: JSON.stringify({ model_option: chosen.value }) });
+    $('settingsMsg').textContent = res.message || 'Saved.';
+    $('settingsMsg').style.color = 'var(--ok)';
+  } catch (e) { $('settingsMsg').textContent = e.message; $('settingsMsg').style.color = 'var(--err)'; }
+}
+
+async function testSettings() {
+  $('settingsMsg').textContent = 'Testing…'; $('settingsMsg').style.color = '';
+  try {
+    const res = await api('/api/settings/test', { method: 'POST' });
+    $('settingsMsg').textContent = res.message; $('settingsMsg').style.color = 'var(--ok)';
+  } catch (e) { $('settingsMsg').textContent = e.message; $('settingsMsg').style.color = 'var(--err)'; }
+}
+
+// Full-window side-by-side comparison of one discrepant group's cases,
+// opened from the "⤢ Compare cases" button. Columns are ordered and tinted
+// by category (missed red / new purple / matched green), individually
+// collapsible, with a sticky header row + field column and ONE scroll
+// container so the horizontal scrollbar is always pinned at the bottom of
+// the view (never buried under a tall narrative row).
+async function openCompare(groupIndex) {
+  const gr = (state.compareGroups || [])[groupIndex];
+  const seriesId = state.compareSeriesId;
+  if (!gr || seriesId == null) return;
+
+  const rank = t => (t === 'missed' ? 0 : t === 'new' ? 1 : 2);
+  const cases = [...gr.cases].sort((a, b) => rank(a.tag) - rank(b.tag));
+
+  const statusLabel = gr.group_status === 'fully_missed' ? 'Fully missed group'
+    : gr.group_status === 'new' ? 'New group (not in ground truth)' : 'Partial match';
+  $('compareTitle').innerHTML = `Case comparison — ${esc(statusLabel)}`;
+  $('compareBody').innerHTML = '<div class="empty">Loading case details…</div>';
+  $('compareModal').classList.add('open');
+
+  let details = {};
+  try {
+    const res = await api(`/api/series/${seriesId}/cases-details?ids=${cases.map(c => c.case_id).join(',')}`);
+    details = res.cases || {};
+  } catch (e) {
+    $('compareBody').innerHTML = `<div style="color:var(--err);font-size:13px;padding:8px">Failed to load case details: ${esc(e.message)}</div>`;
+    return;
+  }
+
+  state.compare = { cases, details, hidden: new Set() };
+  renderCompareTable();
+}
+
+function toggleCompareCase(caseId) {
+  const cmp = state.compare;
+  if (!cmp) return;
+  if (cmp.hidden.has(caseId)) cmp.hidden.delete(caseId);
+  else if (cmp.cases.length - cmp.hidden.size > 1) cmp.hidden.add(caseId);  // keep at least one column
+  renderCompareTable();
+}
+
+function renderCompareTable() {
+  const { cases, details, hidden } = state.compare;
+  const visible = cases.filter(c => !hidden.has(c.case_id));
+  const hiddenCases = cases.filter(c => hidden.has(c.case_id));
+
+  // Toolbar: visible-count + restore chips for collapsed columns.
+  const toolbar = `<div class="cmp-toolbar">
+    <span style="font-size:12px;color:var(--muted);font-weight:700">${visible.length}/${cases.length} cases shown</span>
+    ${hiddenCases.length ? `<span style="font-size:12px;color:var(--muted)">· collapsed:</span>` : ''}
+    ${hiddenCases.map(c => {
+      const [kind] = TAG_META[c.tag] || ['muted'];
+      return `<span class="chip ${kind} clickable" title="Show this case again" onclick="toggleCompareCase('${esc(c.case_id)}')">${esc(c.case_id)} +</span>`;
+    }).join('')}
+    <span style="flex:1"></span>
+    <span style="font-size:11.5px;color:var(--muted)">✕ on a column hides it · <span style="background:#fff5cc;border-bottom:1px dashed #d4a373;padding:0 3px;border-radius:2px">highlighted</span> narrative words are unique to that case</span>
+  </div>`;
+
+  const th = (c) => {
+    const [kind, tagLabel] = TAG_META[c.tag] || ['muted', c.tag];
+    return `<th class="cmp-case-th" style="background:${TAG_BG[c.tag] || '#f5f6fa'};border-top:3px solid ${TAG_BORDER[c.tag] || '#ddd'}">
+      <div style="display:flex;align-items:flex-start;gap:6px">
+        <div style="flex:1;text-align:left">
+          <b style="font-size:13px">${esc(c.case_id)}</b><br>
+          <span class="chip ${kind}" style="margin-top:3px">${tagLabel}</span>
+        </div>
+        <button class="cmp-hide" title="Collapse this case" onclick="toggleCompareCase('${esc(c.case_id)}')">✕</button>
+      </div>
+    </th>`;
+  };
+  const td = (content, c, extra = '') =>
+    `<td class="cmp-td" style="background:${TAG_BG[c.tag] ? TAG_BG[c.tag] + '55' : '#fff'};${extra}">${content}</td>`;
+  const rowLabel = (text) => `<th class="cmp-rowlabel">${text}</th>`;
+
+  // Row order: identity/demographics first, the narrative (the decisive
+  // evidence) in the middle, structured drug/event lists at the bottom.
+  let rows = '';
+  rows += `<tr>${rowLabel('Demographics')}${visible.map(c => {
+    const d = details[c.case_id] || {};
+    return td(`<b>Age</b> ${esc(d.age ?? '—')} &nbsp; <b>Sex</b> ${esc(d.sex ?? '—')} &nbsp; <b>Country</b> ${esc(d.country ?? '—')}`, c);
+  }).join('')}</tr>`;
+
+  rows += `<tr>${rowLabel('Initial date')}${visible.map(c =>
+    td(esc(String((details[c.case_id] || {}).initial_date ?? '—').slice(0, 10)), c)).join('')}</tr>`;
+
+  rows += `<tr>${rowLabel('AI Summary')}${visible.map(c => {
+    const d = details[c.case_id] || {};
+    const sum = d.ai_summary || {};
+    if (!sum || !Object.keys(sum).length) return td('<span style="color:var(--muted);font-style:italic">No summary</span>', c);
+    
+    let html = '';
+    if (sum.lot_number) {
+      const lots = Array.isArray(sum.lot_number) ? sum.lot_number.join(', ') : sum.lot_number;
+      html += `<div style="margin-bottom:3px"><b>Lot:</b> <span class="chip warn" style="font-size:10px;padding:1px 4px">${esc(lots)}</span></div>`;
+    }
+    if (sum.serial_number) {
+      const serials = Array.isArray(sum.serial_number) ? sum.serial_number.join(', ') : sum.serial_number;
+      html += `<div style="margin-bottom:3px"><b>Serial:</b> <span class="chip" style="font-size:10px;padding:1px 4px">${esc(serials)}</span></div>`;
+    }
+    if (sum.patient_role && sum.patient_role !== 'patient') {
+      html += `<div style="margin-bottom:3px"><b>Role:</b> <span class="chip ok" style="font-size:10px;padding:1px 4px">${esc(sum.patient_role)}</span></div>`;
+    }
+    if (sum.primary_adverse_event) {
+      html += `<div style="margin-bottom:3px;font-size:11.5px"><b>Event:</b> ${esc(sum.primary_adverse_event)}</div>`;
+    }
+    if (sum.specific_mechanism_or_circumstance) {
+      html += `<div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.25"><i>${esc(sum.specific_mechanism_or_circumstance)}</i></div>`;
+    }
+    if (sum.journal_reference) {
+      html += `<div style="font-size:11px;color:var(--muted);margin-top:2px">📚 <i>${esc(sum.journal_reference)}</i></div>`;
+    }
+    return td(html || '<span style="color:var(--muted)">—</span>', c);
+  }).join('')}</tr>`;
+
+  const narratives = visible.map(c => (details[c.case_id] || {}).narrative || '');
+  const diffed = computeWordDiffs(narratives);
+  rows += `<tr>${rowLabel('Narrative')}${visible.map((c, i) =>
+    td(diffed[i] || '—', c, 'white-space:pre-wrap;line-height:1.55;font-size:12px;max-width:420px;min-width:260px')
+  ).join('')}</tr>`;
+
+  rows += `<tr>${rowLabel('Drugs')}${visible.map(c => {
+    const drugs = (details[c.case_id] || {}).drugs || [];
+    return td(drugs.map(d => `<span class="chip" style="margin:2px">${esc(d)}</span>`).join('') || '—', c);
+  }).join('')}</tr>`;
+
+  rows += `<tr>${rowLabel('Events')}${visible.map(c => {
+    const events = (details[c.case_id] || {}).events || [];
+    return td(events.map(e => `<span class="chip warn" style="margin:2px">${esc(e)}</span>`).join('') || '—', c);
+  }).join('')}</tr>`;
+
+  $('compareBody').innerHTML = `${toolbar}
+    <div class="cmp-wrap">
+      <table class="cmp-table">
+        <thead><tr><th class="cmp-rowlabel cmp-corner"></th>${visible.map(th).join('')}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function computeWordDiffs(narratives) {
+  if (narratives.length <= 1) {
+    return narratives.map(n => esc(n));
+  }
+
+  function tokenize(text) {
+    return text.split(/(\s+)/);
+  }
+
+  const sets = narratives.map(n => {
+    const words = n.toLowerCase().split(/\s+/).filter(w => w.trim().length > 0);
+    return new Set(words);
+  });
+
+  const commonWords = new Set();
+  if (sets.length > 0) {
+    sets[0].forEach(w => {
+      if (sets.every(s => s.has(w))) {
+        commonWords.add(w);
+      }
+    });
+  }
+
+  return narratives.map(n => {
+    const tokens = tokenize(n);
+    return tokens.map(t => {
+      const clean = t.trim().toLowerCase().replace(/^[.,\/#!$%\^&\*;:{}=\-_`~()]+|[.,\/#!$%\^&\*;:{}=\-_`~()]+$/g, "");
+      if (clean && !commonWords.has(clean)) {
+        return `<span style="background-color:#fff5cc;border-bottom:1px dashed #d4a373;padding:1px;border-radius:2px" title="Unique detail">${esc(t)}</span>`;
+      }
+      return esc(t);
+    }).join("");
+  });
+}
+
+
+function closeModal(id) { $(id).classList.remove('open'); }
+document.querySelectorAll('.modal-back').forEach(m => m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('open'); }));
+
+// --------------------------------------------------------- bootstrap compare
+
+// Distinct (skill_version, model_name) conditions seen anywhere in the
+// currently loaded overview, across ALL series -- not filtered to the
+// approach radio currently selected, so any two stored conditions can be
+// compared regardless of which "Select deduplication approach" tab is active.
+// Mirrors isHiddenRun's mock/notes/archived exclusion so the dropdown only
+// offers conditions the F1 matrix itself would show.
+function getAllConditions() {
+  const map = new Map();
+  (state.overview?.series || []).forEach(s => {
+    (s.runs || []).forEach(r => {
+      if (isHiddenRun(r) || r.f1 == null) return;
+      const key = `${r.skill_version}|${r.model_name || ''}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          skill_version: r.skill_version,
+          model_name: r.model_name || null,
+          label: `${versionLabel(r.skill_version)} — ${r.model_name || 'n/a'}`,
+        });
+      }
+    });
+  });
+  return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function openBootstrapModal() {
+  const conditions = getAllConditions();
+  const optionsHtml = conditions.map((c, i) =>
+    `<option value="${i}">${esc(c.label)}</option>`).join('');
+  const selA = $('bootstrapCondA'), selB = $('bootstrapCondB');
+  selA.innerHTML = optionsHtml;
+  selB.innerHTML = optionsHtml;
+  selA._conditions = conditions;
+  selB._conditions = conditions;
+  if (conditions.length > 1) selB.value = '1';
+  $('bootstrapResult').innerHTML = '';
+  $('bootstrapModal').classList.add('open');
+}
+
+async function runBootstrapCompare() {
+  const selA = $('bootstrapCondA'), selB = $('bootstrapCondB');
+  const condA = selA._conditions[Number(selA.value)];
+  const condB = selB._conditions[Number(selB.value)];
+  const nBoot = Number($('bootstrapNBoot').value) || 10000;
+  const btn = $('bootstrapRunBtn');
+  const resultEl = $('bootstrapResult');
+  if (!condA || !condB) return;
+  if (condA.skill_version === condB.skill_version && condA.model_name === condB.model_name) {
+    resultEl.innerHTML = `<div class="rowmsg warn">Pick two different conditions.</div>`;
+    return;
+  }
+  btn.disabled = true;
+  const prevText = btn.textContent;
+  btn.textContent = 'Running…';
+  resultEl.innerHTML = '';
+  try {
+    const r = await api('/api/bootstrap-compare', {
+      method: 'POST',
+      body: JSON.stringify({
+        condition_a: { skill_version: condA.skill_version, model_name: condA.model_name },
+        condition_b: { skill_version: condB.skill_version, model_name: condB.model_name },
+        n_boot: nBoot,
+      }),
+    });
+    resultEl.innerHTML = renderBootstrapResult(r, condA, condB);
+  } catch (e) {
+    resultEl.innerHTML = `<div class="rowmsg err">${esc(e.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = prevText;
+  }
+}
+
+function renderBootstrapResult(r, condA, condB) {
+  const fmt = (x) => Number(x).toFixed(4);
+  const fmtCi = (ci) => `[${fmt(ci[0])}, ${fmt(ci[1])}]`;
+  const sigChip = r.significant
+    ? `<span class="chip ok">95% CI excludes 0 — significant</span>`
+    : `<span class="chip warn">95% CI includes 0 — not significant</span>`;
+  const excludedNote = (r.excluded_series_missing_from_a.length || r.excluded_series_missing_from_b.length)
+    ? `<div class="rowmsg warn" style="margin-top:8px">Excluded (missing under one condition): ${
+        [...r.excluded_series_missing_from_a.map(s => `${s} (no A)`),
+         ...r.excluded_series_missing_from_b.map(s => `${s} (no B)`)].map(esc).join(', ')
+      }</div>`
+    : '';
+  const perSeriesRows = r.per_series.map(row =>
+    `<tr><td>${esc(row.series)}</td><td style="text-align:right" class="f1">${fmt(row.f1_a)}</td><td style="text-align:right" class="f1">${fmt(row.f1_b)}</td><td style="text-align:right">${fmt(row.f1_a - row.f1_b)}</td></tr>`
+  ).join('');
+  return `
+    <div style="background:#fafbff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-top:4px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+        ${sigChip}
+        <span class="chip info">n=${r.n_series} series, ${r.n_boot.toLocaleString()} resamples</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;margin-bottom:10px">
+        <div><b>${esc(condA.label)}</b><br>macro-F1 = ${fmt(r.macro_f1_a)} ${fmtCi(r.macro_f1_a_ci)}</div>
+        <div><b>${esc(condB.label)}</b><br>macro-F1 = ${fmt(r.macro_f1_b)} ${fmtCi(r.macro_f1_b_ci)}</div>
+      </div>
+      <div style="font-size:13px;margin-bottom:8px"><b>Delta (A − B)</b> = ${fmt(r.delta)} ${fmtCi(r.delta_ci)}, bootstrap p = ${r.p_value < 0.0001 ? '&lt; 0.0001' : r.p_value}</div>
+      ${excludedNote}
+      <details style="margin-top:8px">
+        <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--muted)">Per-series F1 used (${r.per_series.length})</summary>
+        <table style="margin-top:6px;font-size:12.5px"><tr><th>Series</th><th style="text-align:right">A</th><th style="text-align:right">B</th><th style="text-align:right">A−B</th></tr>${perSeriesRows}</table>
+      </details>
+    </div>`;
+}
+
+async function toggleMockMode() {
+  const active = $('mockModeToggle').checked;
+  try {
+    await api('/api/settings', {
+      method: 'POST',
+      body: JSON.stringify({ mock_mode: active })
+    });
+  } catch (e) {
+    alert(e.message);
+    $('mockModeToggle').checked = !active;
+  }
+}
+
+function getSelectedApproach() {
+  const selected = document.querySelector('input[name="dedup_approach"]:checked');
+  return selected ? selected.value : 'paperv2';
+}
+
+function updateApproachSelection() {
+  const approach = getSelectedApproach();
+  const approachCard = document.getElementById('approachCard');
+  const aiApproachCard = document.getElementById('aiApproachCard');
+  if (approach === 'paper' || approach === 'paperv2' || approach === 'paperv2ai' || approach === 'paperv2ailit') {
+    approachCard.style.display = 'block';
+    if (aiApproachCard) aiApproachCard.style.display = 'none';
+    renderApproach();  // refresh param tiles for the selected paper version
+  } else {
+    approachCard.style.display = 'none';
+    if (aiApproachCard) aiApproachCard.style.display = 'block';
+    
+    // Update timeline and title depending on whether it is tiered funnel or legacy bucketing
+    const timelineEl = document.getElementById('ai-approach-timeline');
+    const headerTitleEl = document.getElementById('ai-approach-header-title');
+    if (approach === 'ai') {
+      if (headerTitleEl) headerTitleEl.innerHTML = 'Active Deduplication Approach <span style="text-transform:none;letter-spacing:0;font-weight:400">— AI-Flavored Pipeline (Tiered Funnel)</span>';
+      if (timelineEl) {
+        timelineEl.innerHTML = `
+          <div class="approach-step">
+            <div class="approach-step-title">1. Pair Screening</div>
+            <p class="approach-step-desc">Indexes reports into demographic, drug product, and adverse event datasets. Candidate duplicate pairs must share at least one Product Active Ingredient (PAI) <strong>and</strong> one Adverse Event (AE), with report dates within <span id="ai-param-screening-window">365</span> days.</p>
+          </div>
+          <div class="approach-step">
+            <div class="approach-step-title">2. Pairwise Probabilistic Comparison (Tier 1)</div>
+            <p class="approach-step-desc">Computes a record-linkage weight score over structured fields (age, sex, country, date, drugs, events) and narrative features. If score is &ge; Duplicate Threshold, they are classed as duplicates; if &ge; Rescue Threshold, they go to Tier 2.</p>
+          </div>
+          <div class="approach-step">
+            <div class="approach-step-title">3. Narrative LLM Adjudicator (Tier 2)</div>
+            <p class="approach-step-desc">Ambiguous pairs falling in the rescue window are passed to the AI to compare case narratives in parallel. The AI uses the prompt configuration to decide if the cases describe the same event.</p>
+          </div>
+          <div class="approach-step">
+            <div class="approach-step-title">4. Modularity-Based Grouping &amp; Selection</div>
+            <p class="approach-step-desc">Forms groups using Clauset–Newman–Moore community detection on duplicate edges and selects the optimal reference case.</p>
+          </div>
+        `;
+      }
+    } else {
+      if (headerTitleEl) headerTitleEl.innerHTML = 'Active Deduplication Approach <span style="text-transform:none;letter-spacing:0;font-weight:400">— Bucketing + AI Call</span>';
+      if (timelineEl) {
+        timelineEl.innerHTML = `
+          <div class="approach-step">
+            <div class="approach-step-title">1. Demographic / Smart Bucketing (Tier 1)</div>
+            <p class="approach-step-desc">Partitions cases into buckets based on configured blocking keys (e.g., age band, sex, country). Only cases in the same bucket tag are compared.</p>
+          </div>
+          <div class="approach-step">
+            <div class="approach-step-title">2. Pairwise Similarity Scoring (Tier 2)</div>
+            <p class="approach-step-desc">Scores every pair within one bucket using structured-field similarity (Age, Sex, Country, Dates, Drugs, Events) on a scale of [0.0, 1.0].</p>
+          </div>
+          <div class="approach-step">
+            <div class="approach-step-title">3. TF-IDF Narrative Pre-filter (Tier 2.5)</div>
+            <p class="approach-step-desc">Narrows down large buckets' ambiguous pairs using narrative TF-IDF cosine similarity, skipping pairs with similarity below the prefilter threshold.</p>
+          </div>
+          <div class="approach-step">
+            <div class="approach-step-title">4. Narrative LLM Adjudicator (Tier 3)</div>
+            <p class="approach-step-desc">Ambiguous pairs with similarity between Ambiguous and High Conf thresholds are compared by LLM to make the final merge decision.</p>
+          </div>
+        `;
+      }
+    }
+    // Re-render parameters to fill any newly populated elements
+    renderApproach();
+  }
+  renderSeries();
+}
+
+// load settings, then the overview
+(async () => {
+  loadPaperConfig();
+  refreshAll();
+  try {
+    const settings = await api('/api/settings');
+    $('mockModeToggle').checked = !!settings.mock_mode;
+  } catch {}
+})();
+</script>
+</body>
+</html>
