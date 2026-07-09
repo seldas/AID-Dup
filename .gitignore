@@ -6,3 +6,5 @@ venv/
 dataset/
 .claude/
 groundtruth/
+documents/
+refine/
